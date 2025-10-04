@@ -1,18 +1,92 @@
 import postgres from "postgres";
 import { LatestBook, User } from "./definitions";
 
+const sql = postgres(process.env.POSTGRES_URL!, {
+  ssl: process.env.NODE_ENV === "production" ? "require" : false,
+});
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
+const ITEMS_PER_PAGE = 10;
 
-export async function getUser(email: string): Promise<User | undefined> {
+// =======================
+// LIBROS
+// =======================
+export async function fetchBooksPages(query: string) {
   try {
-    const user = await sql<User[]>`
-      SELECT * FROM usuarios WHERE email=${email}
+    const data = await sql/*sql*/ `
+      SELECT COUNT(DISTINCT l.id) AS count
+      FROM libros l
+      JOIN especialidades e ON l.especialidad_id = e.id
+      JOIN carreras c ON e.carrera_id = c.id
+      JOIN facultades f ON c.facultad_id = f.id
+      LEFT JOIN libros_autores la ON l.id = la.libro_id
+      LEFT JOIN autores a ON la.autor_id = a.id
+      WHERE 
+        l.titulo ILIKE ${`%${query}%`} OR
+        l.descripcion ILIKE ${`%${query}%`} OR
+        l.editorial ILIKE ${`%${query}%`} OR
+        l.anio_publicacion::text ILIKE ${`%${query}%`} OR
+        f.nombre ILIKE ${`%${query}%`} OR
+        c.nombre ILIKE ${`%${query}%`} OR
+        e.nombre ILIKE ${`%${query}%`} OR
+        a.nombre ILIKE ${`%${query}%`}
     `;
-    return user[0];
+
+    return Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
   } catch (error) {
-    console.error("Failed to fetch user:", error);
-    throw new Error("Failed to fetch user.");
+    console.error("❌ Database Error:", error);
+    throw new Error("Failed to fetch total number of books.");
+  }
+}
+
+export async function fetchFilteredBooks(query: string, currentPage: number) {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  try {
+    const data = await sql/*sql*/ `
+  SELECT 
+    l.id,
+    l.titulo,
+    l.descripcion,
+    l.anio_publicacion AS anio,
+    l.editorial,
+    l.idioma,
+    l.paginas,
+    l.isbn,
+    l.pdf_url,
+    l.examen_pdf_url,
+    l.imagen,            -- <-- agregar aquí
+    f.nombre AS facultad,
+    c.nombre AS carrera,
+    e.nombre AS especialidad,
+    COALESCE(string_agg(a.nombre, ', '), 'Autor desconocido') AS autores
+  FROM libros l
+  JOIN especialidades e ON l.especialidad_id = e.id
+  JOIN carreras c ON e.carrera_id = c.id
+  JOIN facultades f ON c.facultad_id = f.id
+  LEFT JOIN libros_autores la ON l.id = la.libro_id
+  LEFT JOIN autores a ON la.autor_id = a.id
+  WHERE 
+    l.titulo ILIKE ${`%${query}%`} OR
+    l.descripcion ILIKE ${`%${query}%`} OR
+    l.editorial ILIKE ${`%${query}%`} OR
+    l.anio_publicacion::text ILIKE ${`%${query}%`} OR
+    f.nombre ILIKE ${`%${query}%`} OR
+    c.nombre ILIKE ${`%${query}%`} OR
+    e.nombre ILIKE ${`%${query}%`} OR
+    a.nombre ILIKE ${`%${query}%`}
+  GROUP BY 
+    l.id, l.titulo, l.descripcion, l.anio_publicacion, 
+    l.editorial, l.idioma, l.paginas, l.isbn,
+    l.pdf_url, l.examen_pdf_url, l.imagen,  -- <-- agregar aquí
+    f.nombre, c.nombre, e.nombre
+  ORDER BY l.created_at DESC
+  LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
+`;
+
+    return data;
+  } catch (error) {
+    console.error("❌ Database Error:", error);
+    throw new Error("Failed to fetch filtered books.");
   }
 }
 
@@ -25,72 +99,117 @@ export type LibrosPorMesItem = {
   total: number;
 };
 
+// =======================
+// LIBRO POR ID
+// =======================
+export async function fetchLibroById(id: string) {
+  try {
+    const data = await sql/*sql*/ `
+      SELECT 
+        l.id,
+        l.titulo,
+        l.descripcion,
+        l.anio_publicacion AS anio,
+        l.editorial,
+        l.idioma,
+        l.paginas,
+        l.isbn,
+        l.pdf_url,
+        l.examen_pdf_url,
+        l.imagen,
+        l.palabras_clave,
+        l.especialidad_id,
+        e.carrera_id,
+        c.facultad_id,
+        COALESCE(
+          json_agg(
+            json_build_object('id', a.id, 'nombre', a.nombre)
+          ) FILTER (WHERE a.id IS NOT NULL),
+          '[]'
+        ) AS autores
+      FROM libros l
+      JOIN especialidades e ON l.especialidad_id = e.id
+      JOIN carreras c ON e.carrera_id = c.id
+      JOIN facultades f ON c.facultad_id = f.id
+      LEFT JOIN libros_autores la ON l.id = la.libro_id
+      LEFT JOIN autores a ON la.autor_id = a.id
+      WHERE l.id = ${id}
+      GROUP BY l.id, e.carrera_id, c.facultad_id;
+    `;
+
+    return data[0];
+  } catch (error) {
+    console.error("❌ Error en fetchLibroById:", error);
+    throw new Error("No se pudo obtener el libro.");
+  }
+}
+
 export async function fetchLibrosPorMes(): Promise<LibrosPorMesItem[]> {
   try {
     const result = await sql<LibrosPorMesItem[]>`
       SELECT 
-        EXTRACT(MONTH FROM created_at)::int AS mes,
-        EXTRACT(YEAR FROM created_at)::int AS anio,
-        COUNT(DISTINCT libros.id)::int AS total
-      FROM libros
+        EXTRACT(MONTH FROM l.created_at)::int AS mes,
+        EXTRACT(YEAR FROM l.created_at)::int AS anio,
+        COUNT(l.id)::int AS total
+      FROM libros l
       GROUP BY anio, mes
       ORDER BY anio, mes;
     `;
-
     return result;
   } catch (error) {
-    console.error("Error en fetchLibrosPorMes:", error);
+    console.error("❌ Error en fetchLibrosPorMes:", error);
     throw new Error("No se pudieron obtener los libros por mes.");
   }
 }
 
+// =======================
+// USUARIOS
+// =======================
+export async function getUser(email: string): Promise<User | undefined> {
+  try {
+    const user = await sql<User[]>`
+      SELECT * FROM usuarios WHERE email = ${email}
+    `;
+    return user[0] ?? undefined;
+  } catch (error) {
+    console.error("❌ Failed to fetch user:", error);
+    throw new Error("Failed to fetch user.");
+  }
+}
+
+// =======================
+// DASHBOARD CARDS
+// =======================
 export async function fetchCardData() {
   try {
-    const totalLibrosPromise = sql`SELECT COUNT(*) FROM libros`;
-    const totalFacultadesPromise = sql`SELECT COUNT(*) FROM facultades`;
-    const totalCarrerasPromise = sql`SELECT COUNT(*) FROM carreras`;
-    const totalEspecialidadesPromise = sql`SELECT COUNT(*) FROM especialidades`;
-    const totalAutoresPromise = sql`SELECT COUNT(*) FROM autores`;
-    const totalUsuariosPromise = sql`SELECT COUNT(*) FROM usuarios`;
-    const totalLibrosAsignadosPromise = sql`SELECT COUNT(*) FROM libros_asignados`;
-
-    const [
-      libros,
-      facultades,
-      carreras,
-      especialidades,
-      autores,
-      usuarios,
-      librosAsignados,
-    ] = await Promise.all([
-      totalLibrosPromise,
-      totalFacultadesPromise,
-      totalCarrerasPromise,
-      totalEspecialidadesPromise,
-      totalAutoresPromise,
-      totalUsuariosPromise,
-      totalLibrosAsignadosPromise,
+    const queries = await Promise.all([
+      sql`SELECT COUNT(*)::int AS count FROM libros`,
+      sql`SELECT COUNT(*)::int AS count FROM facultades`,
+      sql`SELECT COUNT(*)::int AS count FROM carreras`,
+      sql`SELECT COUNT(*)::int AS count FROM especialidades`,
+      sql`SELECT COUNT(*)::int AS count FROM autores`,
+      sql`SELECT COUNT(*)::int AS count FROM usuarios`,
+      sql`SELECT COUNT(*)::int AS count FROM libros_asignados`,
     ]);
 
     return {
-      totalLibros: Number(libros[0].count ?? "0"),
-      totalFacultades: Number(facultades[0].count ?? "0"),
-      totalCarreras: Number(carreras[0].count ?? "0"),
-      totalEspecialidades: Number(especialidades[0].count ?? "0"),
-      totalAutores: Number(autores[0].count ?? "0"),
-      totalUsuarios: Number(usuarios[0].count ?? "0"),
-      totalLibrosAsignados: Number(librosAsignados[0].count ?? "0"),
+      totalLibros: queries[0][0].count,
+      totalFacultades: queries[1][0].count,
+      totalCarreras: queries[2][0].count,
+      totalEspecialidades: queries[3][0].count,
+      totalAutores: queries[4][0].count,
+      totalUsuarios: queries[5][0].count,
+      totalLibrosAsignados: queries[6][0].count,
     };
   } catch (error) {
-    console.error("Database Error:", error);
+    console.error("❌ Database Error:", error);
     throw new Error("Failed to fetch card data for library.");
   }
 }
 
-
-
-
-
+// =======================
+// ÚLTIMOS LIBROS
+// =======================
 export async function fetchLatestBooks(): Promise<LatestBook[]> {
   try {
     const data = await sql<LatestBook[]>`
@@ -100,20 +219,78 @@ export async function fetchLatestBooks(): Promise<LatestBook[]> {
         l.anio_publicacion,
         l.created_at,
         e.nombre AS especialidad,
-        jsonb_build_object(
-          'id', a.id,
-          'nombre', a.nombre
-        ) AS autor
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', a.id,
+              'nombre', a.nombre
+            )
+          ) FILTER (WHERE a.id IS NOT NULL),
+          '[]'
+        ) AS autores
       FROM libros l
       JOIN especialidades e ON l.especialidad_id = e.id
-      LEFT JOIN autores a ON l.autor_id = a.id
+      LEFT JOIN libros_autores la ON l.id = la.libro_id
+      LEFT JOIN autores a ON la.autor_id = a.id
+      GROUP BY l.id, e.nombre
       ORDER BY l.created_at DESC
-      LIMIT 5;
+      LIMIT 6;
     `;
 
     return data;
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch the latest books.");
+  }
+}
+
+// =======================
+// FACULTADES
+// =======================
+export async function fetchFacultades() {
+  try {
+    const facultades = await sql/*sql*/ `
+      SELECT id, nombre
+      FROM facultades
+      ORDER BY nombre ASC
+    `;
+    return facultades;
+  } catch (error) {
+    console.error("❌ Error fetching facultades:", error);
+    return [];
+  }
+}
+
+// =======================
+// CARRERAS
+// =======================
+export async function fetchCarreras() {
+  try {
+    const carreras = await sql/*sql*/ `
+      SELECT id, nombre, facultad_id
+      FROM carreras
+      ORDER BY nombre ASC
+    `;
+    return carreras;
+  } catch (error) {
+    console.error("❌ Error fetching carreras:", error);
+    return [];
+  }
+}
+
+// =======================
+// ESPECIALIDADES
+// =======================
+export async function fetchEspecialidades() {
+  try {
+    const especialidades = await sql/*sql*/ `
+      SELECT id, nombre, carrera_id
+      FROM especialidades
+      ORDER BY nombre ASC
+    `;
+    return especialidades;
+  } catch (error) {
+    console.error("❌ Error fetching especialidades:", error);
+    return [];
   }
 }

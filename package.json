@@ -9,7 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.896.0",
+    "@aws-sdk/s3-request-presigner": "^3.896.0",
     "@heroicons/react": "^2.2.0",
+    "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
     "next": "15.5.4",
@@ -17,6 +20,7 @@
     "postgres": "^3.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "use-debounce": "^10.0.4",
     "zod": "^4.1.11"
   },
   "devDependencies": {

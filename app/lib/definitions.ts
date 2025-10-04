@@ -1,5 +1,8 @@
 // =======================
 // ROLES
+
+import { Autor } from "./definitions/authors.definition";
+
 // =======================
 export type Role = "ADMIN" | "ASISTENTE" | "ALUMNO";
 
@@ -21,13 +24,6 @@ export interface Especialidad {
   id: number;
   nombre: string;
   carrera_id: number;
-}
-
-export interface Autor {
-  id: number;
-  nombre: string;
-  nacionalidad?: string;
-  biografia?: string | null;
 }
 
 export interface Libro {
@@ -61,15 +57,11 @@ export interface LibroAsignado {
   fecha_asignacion: string;
 }
 
-// app/lib/definitions.ts
-export interface LatestBook {
+export type LatestBook = {
   id: number;
   titulo: string;
   anio_publicacion: number;
   created_at: string;
   especialidad: string;
-  autor: {
-    id: number;
-    nombre: string;
-  } | null;
-}
+  autores: Autor[]; // ahora es array
+};

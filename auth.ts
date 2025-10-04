@@ -35,6 +35,10 @@ export const { auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  session: {
+    strategy: "jwt", // recomendable si usas Credentials
+    maxAge: 60 * 60, // 1 hora (en segundos)
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

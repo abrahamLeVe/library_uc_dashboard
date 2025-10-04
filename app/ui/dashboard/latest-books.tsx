@@ -35,7 +35,9 @@ export default async function LatestBooks() {
                     {book.titulo}
                   </p>
                   <p className="hidden truncate text-sm text-gray-500 sm:block">
-                    {book.autor ? book.autor.nombre : "Autor desconocido"}
+                    {book.autores.length > 0
+                      ? book.autores.map((a) => a.nombre).join(", ")
+                      : "Autor desconocido"}
                     {" — "}
                     {book.especialidad}
                   </p>

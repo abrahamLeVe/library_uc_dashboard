@@ -1,6 +1,6 @@
-import { fetchLibrosPorMes } from "@/app/lib/data";
 import { CalendarIcon } from "@heroicons/react/24/outline";
 import { nunito } from "../fonts";
+import { fetchLibrosPorMes } from "@/app/lib/data";
 
 type LibrosPorMesItem = {
   mes: number; // 1..12
@@ -37,7 +37,6 @@ export default async function LibrosChart() {
     lookup.set(key, Number(r.total ?? 0));
   });
 
-  // Construir array de los últimos 12 meses con totals (0 si no hay)
   const months = last12Months().map((m) => {
     const key = `${m.anio}-${m.mes}`;
     return {
@@ -50,19 +49,14 @@ export default async function LibrosChart() {
     return <p className="mt-4 text-gray-400">No hay datos disponibles.</p>;
   }
 
-  const maxValue = Math.max(...months.map((m) => m.total), 1); // al menos 1 para evitar div/0
+  const maxValue = Math.max(...months.map((m) => m.total), 1);
   const chartHeight = 350;
 
-  // 🔥 Etiquetas del eje Y ajustadas para terminar en el máximo real
-  const divisions = Math.min(maxValue, 5); // máx 5 divisiones
+  // Etiquetas del eje Y
+  const divisions = Math.min(maxValue, 5);
   const step = Math.max(1, Math.floor(maxValue / divisions));
-  const yAxisLabels = Array.from({ length: divisions + 1 }, (_, i) => {
-    const val = i * step;
-    return val > maxValue ? maxValue : val;
-  });
-  if (yAxisLabels[yAxisLabels.length - 1] !== maxValue) {
-    yAxisLabels[yAxisLabels.length - 1] = maxValue; // asegurar último = maxValue
-  }
+  const yAxisLabels = Array.from({ length: divisions + 1 }, (_, i) => i * step);
+  yAxisLabels[yAxisLabels.length - 1] = maxValue;
 
   return (
     <div className="w-full md:col-span-4">
@@ -73,11 +67,17 @@ export default async function LibrosChart() {
         <div className="sm:grid-cols-13 mt-0 grid grid-cols-12 items-end gap-2 rounded-md bg-white p-4 md:gap-4">
           {/* Eje Y */}
           <div
-            className="mb-6 hidden flex-col justify-between text-sm text-gray-400 sm:flex"
-            style={{ height: `${chartHeight}px` }}
+            className="relative mb-6 hidden text-sm text-gray-400 sm:flex"
+            style={{ height: `${chartHeight}px`, width: '30px' }}
           >
             {yAxisLabels.map((label, i) => (
-              <p key={label + i}>{label}</p>
+              <p
+                key={`yAxis-${i}-${label}`}
+                className="absolute left-0"
+                style={{ bottom: `${(chartHeight / maxValue) * label}px` }}
+              >
+                {label}
+              </p>
             ))}
           </div>
 
