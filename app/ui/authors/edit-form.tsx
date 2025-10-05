@@ -45,7 +45,7 @@ export default function EditAuthorForm({
         className="w-full max-w-md space-y-5 bg-white p-8 rounded-2xl border border-gray-200 shadow-lg shadow-gray-100"
       >
         <h2 className="text-xl font-bold text-gray-800 text-center">
-          Editar Autor <span className="text-red-500">*</span>
+          Editar Autor
         </h2>
 
         {/* Campo oculto ID */}
@@ -108,7 +108,7 @@ export default function EditAuthorForm({
         )}
 
         {/* Botones */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end items-center gap-3">
           <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
             <Link
               href="/dashboard/author"

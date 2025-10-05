@@ -1,25 +1,25 @@
 "use client";
-import { deleteAutor } from "@/app/lib/actions/authors/delete.action";
+import { deleteFacultad } from "@/app/lib/actions/faculty/delete.action";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
-export function CreateAuthor() {
+export function CreateFacultad() {
   return (
     <Link
-      href="/dashboard/author/create"
-      className="flex h-10 items-center rounded-lg bg-green-600 px-4 text-sm font-medium text-white hover:bg-green-500"
+      href="/dashboard/faculty/create"
+      className="flex h-10 items-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white hover:bg-blue-400 "
     >
-      <span className="hidden md:block">Registrar autor</span>
+      <span className="hidden md:block">Registrar Facultad</span>
       <PlusIcon className="h-5 md:ml-4" />
     </Link>
   );
 }
 
-export function UpdateAuthor({ id }: { id: number }) {
+export function UpdateFacultad({ id }: { id: number }) {
   return (
     <Link
-      href={`/dashboard/author/${id}/edit`}
+      href={`/dashboard/faculty/${id}/edit`}
       className="rounded-md border p-2 hover:bg-gray-100"
     >
       <PencilIcon className="w-5" />
@@ -27,14 +27,14 @@ export function UpdateAuthor({ id }: { id: number }) {
   );
 }
 
-export function DeleteAuthor({ id }: { id: number }) {
-  const deleteAutorWithId = deleteAutor.bind(null, id);
+export function DeleteFacultad({ id }: { id: number }) {
+  // const deleteTemaWithId = deleteTema.bind(null, id);
   const [showModal, setShowModal] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handleConfirmDelete = () => {
     startTransition(() => {
-      deleteAutorWithId();
+      deleteFacultad(id);
       setShowModal(false);
     });
   };
@@ -54,10 +54,10 @@ export function DeleteAuthor({ id }: { id: number }) {
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-80 relative">
             <h2 className="text-lg font-semibold text-gray-800">
-              Eliminar Autor
+              Eliminar Facultad
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              ¿Seguro que quieres eliminar este autor?
+              ¿Seguro que quieres eliminar esta facultad?
             </p>
             <span className="text-red-500 font-medium">
               Esta acción no se puede deshacer.

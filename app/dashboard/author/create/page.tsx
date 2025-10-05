@@ -15,7 +15,7 @@ export default async function Page() {
     <main className="relative overflow-hidden">
       <Breadcrumbs
         breadcrumbs={[
-          { label: "Temas", href: "/dashboard/author" },
+          { label: "Autores", href: "/dashboard/author" },
           {
             label: "Registrar autor",
             href: "/dashboard/author/create",

@@ -4,7 +4,7 @@ import {
   ArchiveBoxIcon,
   BookOpenIcon,
   HomeIcon,
-  TicketIcon,
+  HomeModernIcon,
   UserGroupIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
@@ -22,7 +22,7 @@ const links = [
     icon: ArchiveBoxIcon,
     role: "ADMIN",
   },
-  { name: "Temas", href: "/dashboard/themes", icon: TicketIcon },
+  { name: "Facultades", href: "/dashboard/faculty", icon: HomeModernIcon },
   { name: "Autores", href: "/dashboard/author", icon: UserGroupIcon },
   { name: "Usuarios", href: "/dashboard/users", icon: UserIcon, role: "ADMIN" },
 ];
