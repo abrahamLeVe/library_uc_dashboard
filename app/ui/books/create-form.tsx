@@ -243,6 +243,20 @@ export default function Form({
         <FieldError errors={state.errors?.titulo} />
       </div>
 
+      {/* PDF del libro */}
+      <div>
+        <label className="block text-sm font-medium">
+          PDF del libro<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+          className="w-full rounded-md border px-3 py-2"
+          required
+        />
+      </div>
+
       {/* Descripción */}
       <div>
         <label className="block text-sm font-medium">Descripción</label>
@@ -325,20 +339,6 @@ export default function Form({
           accept="image/*"
           onChange={(e) => setImagenFile(e.target.files?.[0] || null)}
           className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      {/* PDF del libro */}
-      <div>
-        <label className="block text-sm font-medium">
-          PDF del libro<span className="text-red-500">*</span>
-        </label>
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-          className="w-full rounded-md border px-3 py-2"
-          required
         />
       </div>
 

@@ -28,13 +28,13 @@ export function UpdateFacultad({ id }: { id: number }) {
 }
 
 export function DeleteFacultad({ id }: { id: number }) {
-  // const deleteTemaWithId = deleteTema.bind(null, id);
+  const deleteTemaWithId = deleteFacultad.bind(null, id);
   const [showModal, setShowModal] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handleConfirmDelete = () => {
     startTransition(() => {
-      deleteFacultad(id);
+      deleteTemaWithId;
       setShowModal(false);
     });
   };
