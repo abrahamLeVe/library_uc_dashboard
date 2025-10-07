@@ -1,4 +1,4 @@
-import { fetchCardData } from "@/app/lib/data";
+import { fetchCardData } from "@/app/lib/data/books.data";
 import {
   AcademicCapIcon,
   BookmarkIcon,

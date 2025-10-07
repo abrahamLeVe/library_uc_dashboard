@@ -1,4 +1,4 @@
-import { fetchAutoresPages } from "@/app/lib/data/authors/authors.data";
+import { fetchAutoresPages } from "@/app/lib/data/authors.data";
 import { CreateAuthor } from "@/app/ui/authors/buttons";
 import AutoresTable from "@/app/ui/authors/table";
 import Pagination from "@/app/ui/books/pagination";

@@ -1,4 +1,4 @@
-import { fetchAutores } from "@/app/lib/data/authors/authors.data";
+import { fetchAutores } from "@/app/lib/data/authors.data";
 import AuthorForm from "@/app/ui/authors/create-form";
 import LatestAuthors from "@/app/ui/authors/latest-authos";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";

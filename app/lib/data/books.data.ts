@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { LatestBook, User } from "./definitions";
+import { LatestBook } from "../definitions/books.definitions";
 
 const sql = postgres(process.env.POSTGRES_URL!, {
   ssl: process.env.NODE_ENV === "production" ? "require" : false,
@@ -163,21 +163,6 @@ export async function fetchLibrosPorMes(): Promise<LibrosPorMesItem[]> {
 }
 
 // =======================
-// USUARIOS
-// =======================
-export async function getUser(email: string): Promise<User | undefined> {
-  try {
-    const user = await sql<User[]>`
-      SELECT * FROM usuarios WHERE email = ${email}
-    `;
-    return user[0] ?? undefined;
-  } catch (error) {
-    console.error("❌ Failed to fetch user:", error);
-    throw new Error("Failed to fetch user.");
-  }
-}
-
-// =======================
 // DASHBOARD CARDS
 // =======================
 export async function fetchCardData() {
@@ -241,56 +226,5 @@ export async function fetchLatestBooks(): Promise<LatestBook[]> {
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch the latest books.");
-  }
-}
-
-// =======================
-// FACULTADES
-// =======================
-export async function fetchFacultades() {
-  try {
-    const facultades = await sql/*sql*/ `
-      SELECT id, nombre
-      FROM facultades
-      ORDER BY nombre ASC
-    `;
-    return facultades;
-  } catch (error) {
-    console.error("❌ Error fetching facultades:", error);
-    return [];
-  }
-}
-
-// =======================
-// CARRERAS
-// =======================
-export async function fetchCarreras() {
-  try {
-    const carreras = await sql/*sql*/ `
-      SELECT id, nombre, facultad_id
-      FROM carreras
-      ORDER BY nombre ASC
-    `;
-    return carreras;
-  } catch (error) {
-    console.error("❌ Error fetching carreras:", error);
-    return [];
-  }
-}
-
-// =======================
-// ESPECIALIDADES
-// =======================
-export async function fetchEspecialidades() {
-  try {
-    const especialidades = await sql/*sql*/ `
-      SELECT id, nombre, carrera_id
-      FROM especialidades
-      ORDER BY nombre ASC
-    `;
-    return especialidades;
-  } catch (error) {
-    console.error("❌ Error fetching especialidades:", error);
-    return [];
   }
 }

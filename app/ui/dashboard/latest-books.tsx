@@ -1,4 +1,4 @@
-import { fetchLatestBooks } from "@/app/lib/data";
+import { fetchLatestBooks } from "@/app/lib/data/books.data";
 import clsx from "clsx";
 import { nunito } from "../fonts";
 

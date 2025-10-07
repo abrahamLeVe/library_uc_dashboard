@@ -158,6 +158,9 @@ export const usuarios = [
     password: "hashedpassword1",
     carrera_id: 1101,
     rol: "ALUMNO",
+    created_at: "2025-01-10T08:32:45.000Z",
+    updated_at: "2025-03-15T10:20:30.000Z",
+    activo: true,
   },
   {
     id: 1502,
@@ -166,6 +169,9 @@ export const usuarios = [
     password: "hashedpassword2",
     carrera_id: 1102,
     rol: "ALUMNO",
+    created_at: "2025-02-05T09:10:00.000Z",
+    updated_at: "2025-04-10T11:45:12.000Z",
+    activo: true,
   },
   {
     id: 1503,
@@ -174,6 +180,9 @@ export const usuarios = [
     password: "hashedpassword3",
     carrera_id: 1103,
     rol: "ALUMNO",
+    created_at: "2025-01-25T14:22:17.000Z",
+    updated_at: "2025-04-02T09:18:50.000Z",
+    activo: true,
   },
   {
     id: 1504,
@@ -182,6 +191,9 @@ export const usuarios = [
     password: "hashedpassword4",
     carrera_id: 1104,
     rol: "ALUMNO",
+    created_at: "2025-02-15T10:05:30.000Z",
+    updated_at: "2025-05-01T12:40:00.000Z",
+    activo: true,
   },
   {
     id: 1505,
@@ -190,6 +202,9 @@ export const usuarios = [
     password: "hashedpassword5",
     carrera_id: 1105,
     rol: "ALUMNO",
+    created_at: "2025-01-12T16:48:00.000Z",
+    updated_at: "2025-04-22T13:15:25.000Z",
+    activo: true,
   },
   {
     id: 1506,
@@ -198,6 +213,9 @@ export const usuarios = [
     password: "hashedadmin",
     carrera_id: null,
     rol: "ADMIN",
+    created_at: "2025-01-01T09:00:00.000Z",
+    updated_at: "2025-06-05T11:30:00.000Z",
+    activo: true,
   },
   {
     id: 1507,
@@ -206,6 +224,9 @@ export const usuarios = [
     password: "hashedbiblio",
     carrera_id: null,
     rol: "BIBLIOTECARIO",
+    created_at: "2025-02-20T08:25:10.000Z",
+    updated_at: "2025-05-20T10:45:55.000Z",
+    activo: true,
   },
 ];
 

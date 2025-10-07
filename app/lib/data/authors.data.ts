@@ -1,7 +1,7 @@
 "use server";
 
-import { sql } from "../../db";
-import { Autor } from "../../definitions/authors.definition";
+import { sql } from "../db";
+import { Autor } from "../definitions/authors.definition";
 
 // Traer total de páginas
 export async function fetchAutoresPages(query: string) {

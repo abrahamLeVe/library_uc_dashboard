@@ -2,9 +2,9 @@ import bcrypt from "bcrypt";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
-import { Role } from "./app/lib/definitions";
 import { authConfig } from "./auth.config";
-import { getUser } from "./app/lib/data";
+import { Role } from "./app/lib/definitions/users.definitions";
+import { getUser } from "./app/lib/data/users.data";
 
 export const { auth, signIn, signOut } = NextAuth({
   ...authConfig,

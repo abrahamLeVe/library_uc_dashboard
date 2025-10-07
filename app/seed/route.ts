@@ -82,15 +82,19 @@ async function createTables() {
   `;
 
   await sql`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-      nombre VARCHAR(255) NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      carrera_id INT REFERENCES carreras(id),
-      rol VARCHAR(20) NOT NULL CHECK (rol IN ('ALUMNO','ADMIN','BIBLIOTECARIO'))
-    );
-  `;
+  CREATE TABLE IF NOT EXISTS usuarios (
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre VARCHAR(255) NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  carrera_id INT REFERENCES carreras(id),
+  rol VARCHAR(20) NOT NULL CHECK (rol IN ('ALUMNO','ADMIN','BIBLIOTECARIO')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  activo BOOLEAN DEFAULT TRUE
+);
+
+`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS libros_asignados (
@@ -197,13 +201,34 @@ async function seedLibrosAutores() {
   }
 }
 
-async function seedUsuarios() {
+export async function seedUsuarios() {
   for (const u of usuarios) {
     const hashedPassword = await bcrypt.hash(u.password, 10);
+
     await sql`
-      INSERT INTO usuarios (id, nombre, email, password, carrera_id, rol)
+      INSERT INTO usuarios (
+        id,
+        nombre,
+        email,
+        password,
+        carrera_id,
+        rol,
+        created_at,
+        updated_at,
+        activo
+      )
       OVERRIDING SYSTEM VALUE
-      VALUES (${u.id}, ${u.nombre}, ${u.email}, ${hashedPassword}, ${u.carrera_id}, ${u.rol})
+      VALUES (
+        ${u.id},
+        ${u.nombre},
+        ${u.email},
+        ${hashedPassword},
+        ${u.carrera_id},
+        ${u.rol},
+        ${u.created_at},
+        ${u.updated_at},
+        ${u.activo}
+      )
       ON CONFLICT (id) DO NOTHING;
     `;
   }

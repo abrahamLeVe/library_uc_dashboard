@@ -1,22 +1,22 @@
-import { fetchAutorById, fetchAutores } from "@/app/lib/data/authors.data";
-import EditAuthorForm from "@/app/ui/authors/edit-form";
-import LatestAuthors from "@/app/ui/authors/latest-authos";
+import { fetchUserById } from "@/app/lib/data/users.data";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
-
+import EditUserForm from "@/app/ui/users/edit-fom";
+import LatestUsers from "@/app/ui/users/latest-users";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Editar Autor",
+  title: "Editar Usuario",
 };
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const id = params.id;
-  const autor = await fetchAutorById(Number(id));
-  const autores = await fetchAutores();
 
-  if (!autor) {
+  const user = await fetchUserById(id);
+
+  if (!user) {
     notFound();
   }
 
@@ -24,18 +24,20 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <main className="relative overflow-hidden">
       <Breadcrumbs
         breadcrumbs={[
-          { label: "Autores", href: "/dashboard/author" },
+          { label: "Usuarios", href: "/dashboard/users" },
           {
-            label: "Editar autor",
-            href: `/dashboard/author/${id}/edit`,
+            label: "Editar Usuario",
+            href: `/dashboard/users/${id}/edit`,
             active: true,
           },
         ]}
       />
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
-        <EditAuthorForm autores={autores} autor={autor} />
-        <LatestAuthors autores={autores} id={id} />
+        <EditUserForm user={user} />
+        <Suspense>
+          <LatestUsers />
+        </Suspense>
       </div>
     </main>
   );

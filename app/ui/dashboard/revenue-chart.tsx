@@ -1,6 +1,6 @@
 import { CalendarIcon } from "@heroicons/react/24/outline";
 import { nunito } from "../fonts";
-import { fetchLibrosPorMes } from "@/app/lib/data";
+import { fetchLibrosPorMes } from "@/app/lib/data/books.data";
 
 type LibrosPorMesItem = {
   mes: number; // 1..12
@@ -9,8 +9,18 @@ type LibrosPorMesItem = {
 };
 
 const MONTH_NAMES_SHORT = [
-  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+  "Ene",
+  "Feb",
+  "Mar",
+  "Abr",
+  "May",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dic",
 ];
 
 function last12Months() {
@@ -68,7 +78,7 @@ export default async function LibrosChart() {
           {/* Eje Y */}
           <div
             className="relative mb-6 hidden text-sm text-gray-400 sm:flex"
-            style={{ height: `${chartHeight}px`, width: '30px' }}
+            style={{ height: `${chartHeight}px`, width: "30px" }}
           >
             {yAxisLabels.map((label, i) => (
               <p
@@ -83,7 +93,10 @@ export default async function LibrosChart() {
 
           {/* Barras */}
           {months.map((m) => (
-            <div key={`${m.anio}-${m.mes}`} className="flex flex-col items-center gap-2">
+            <div
+              key={`${m.anio}-${m.mes}`}
+              className="flex flex-col items-center gap-2"
+            >
               <div
                 className="w-full rounded-md bg-green-400 transition-all"
                 style={{

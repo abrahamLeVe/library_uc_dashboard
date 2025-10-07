@@ -1,14 +1,14 @@
-import {
-  fetchFacultades,
-  fetchCarreras,
-  fetchEspecialidades,
-  fetchLibroById,
-} from "@/app/lib/data";
+import { fetchLibroById } from "@/app/lib/data/books.data";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
 import Form from "@/app/ui/books/edit-form";
 import { Metadata } from "next";
 import { getPdfUrl } from "@/app/lib/s3";
-import { fetchAutores } from "@/app/lib/data/authors/authors.data";
+import {
+  fetchCarreras,
+  fetchEspecialidades,
+  fetchFacultadesAll,
+} from "@/app/lib/data/faculty.data";
+import { fetchAutores } from "@/app/lib/data/authors.data";
 
 export const metadata: Metadata = {
   title: "Editar Libro",
@@ -22,7 +22,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const [autores, facultades, carreras, especialidades, libro] =
     await Promise.all([
       fetchAutores(),
-      fetchFacultades(),
+      fetchFacultadesAll(),
       fetchCarreras(),
       fetchEspecialidades(),
       fetchLibroById(id),
