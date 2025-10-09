@@ -20,8 +20,10 @@ export const { auth, signIn, signOut } = NextAuth({
         const { email, password } = parsedCredentials.data;
         const user = await getUser(email);
         const role = user?.rol;
+        const activo = user?.activo;
 
         if (!role || role === "ALUMNO") return null;
+        if (!Boolean(activo)) return null;
 
         const passwordsMatch = await bcrypt.compare(password, user.password);
         if (!passwordsMatch) return null;

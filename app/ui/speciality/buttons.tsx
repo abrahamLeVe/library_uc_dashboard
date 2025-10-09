@@ -1,40 +1,41 @@
 "use client";
-import { deleteFacultad } from "@/app/lib/actions/faculty/delete.action";
+
+import { deleteEspecialidad } from "@/app/lib/actions/speciality/delete.action";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
-export function CreateFacultad() {
+export function CreateEspecialidad() {
   return (
     <Link
-      href="/dashboard/faculty/create"
-      className="flex h-10 items-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white hover:bg-blue-400 "
+      href="/dashboard/specialty/create"
+      className="flex h-10 items-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white hover:bg-blue-400 transition-colors"
     >
-      <span className="hidden md:block">Registrar Facultad</span>
+      <span className="hidden md:block">Registrar Especialidad</span>
       <PlusIcon className="h-5 md:ml-4" />
     </Link>
   );
 }
 
-export function UpdateFacultad({ id }: { id: number }) {
+export function UpdateEspecialidad({ id }: { id: number }) {
   return (
     <Link
-      href={`/dashboard/faculty/${id}/edit`}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      href={`/dashboard/specialty/${id}/edit`}
+      className="rounded-md border p-2 hover:bg-gray-100 transition-colors"
     >
       <PencilIcon className="w-5" />
     </Link>
   );
 }
 
-export function DeleteFacultad({ id }: { id: number }) {
-  const deleteTemaWithId = deleteFacultad.bind(null, id);
+export function DeleteEspecialidad({ id }: { id: number }) {
+  const deleteEspecialidadWithId = deleteEspecialidad.bind(null, id);
   const [showModal, setShowModal] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handleConfirmDelete = () => {
     startTransition(async () => {
-      await deleteTemaWithId();
+      await deleteEspecialidadWithId();
       setShowModal(false);
     });
   };
@@ -44,9 +45,8 @@ export function DeleteFacultad({ id }: { id: number }) {
       <button
         onClick={() => setShowModal(true)}
         className="p-2 rounded-full hover:bg-red-50 transition-colors"
-        aria-label="Eliminar autor"
+        aria-label="Eliminar especialidad"
       >
-        <span className="sr-only">Eliminar</span>
         <TrashIcon className="w-4 text-red-600" />
       </button>
 
@@ -54,10 +54,10 @@ export function DeleteFacultad({ id }: { id: number }) {
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-80 relative">
             <h2 className="text-lg font-semibold text-gray-800">
-              Eliminar Facultad
+              Eliminar Especialidad
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              ¿Seguro que quieres eliminar esta facultad?
+              ¿Seguro que quieres eliminar esta especialidad?
             </p>
             <span className="text-red-500 font-medium">
               Esta acción no se puede deshacer.

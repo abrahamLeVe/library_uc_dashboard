@@ -17,12 +17,7 @@ export interface AppUser {
   name?: string | null;
   email?: string | null;
   image?: string | null;
-
-  // Datos adicionales de alumno
-  carreraId?: number | null;
-  dni?: string | null;
-  telefono?: string | null;
-  direccion?: string | null;
+  activo?: boolean;
 }
 
 // =======================

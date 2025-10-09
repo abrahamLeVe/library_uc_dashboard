@@ -31,5 +31,8 @@ export interface Carrera {
 export interface Especialidad {
   id: number;
   nombre: string;
-  carrera_id: number;
+  carrera_id: number | null;
+  carrera_nombre: string | null;
+  facultad_id: number | null;
+  facultad_nombre: string | null;
 }

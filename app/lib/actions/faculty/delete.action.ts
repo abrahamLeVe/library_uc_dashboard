@@ -9,7 +9,6 @@ export async function deleteFacultad(id: number) {
     const [facultad] = await sql/*sql*/ `
       SELECT id, nombre FROM facultades WHERE id = ${id};
     `;
-
     if (!facultad) {
       return { message: "⚠️ Facultad no encontrada." };
     }

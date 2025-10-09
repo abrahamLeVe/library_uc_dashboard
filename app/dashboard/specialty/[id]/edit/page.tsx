@@ -1,26 +1,32 @@
-import {
-  fetchFacultadById,
-  fetchFacultadesAll,
-} from "@/app/lib/data/faculty.data";
-import Breadcrumbs from "@/app/ui/books/breadcrumbs";
-import EditFacultadForm from "@/app/ui/faculty/edit-fom";
-import LatestFacultades from "@/app/ui/faculty/latest-faculty";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { fetchCarrerasAll } from "@/app/lib/data/career.data";
+
+import {
+  fetchEspecialidadById,
+  fetchEspecialidadesAll,
+} from "@/app/lib/data/speciality.data";
+import Breadcrumbs from "@/app/ui/books/breadcrumbs";
+import LatestEspecialidades from "@/app/ui/speciality/latest-speciality";
+import EditEspecialidadForm from "@/app/ui/speciality/edit-fom";
+
 export const metadata: Metadata = {
-  title: "Editar Facultad",
+  title: "Editar Especialidad",
 };
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const id = params.id;
+  const id = Number(params.id);
 
-  // 🔹 Obtener la facultad específica y todas las facultades
-  const facultad = await fetchFacultadById(Number(id));
-  const facultades = await fetchFacultadesAll();
+  // 🔹 Obtener la especialidad específica y todas las especialidades
+  const especialidad = await fetchEspecialidadById(id);
+  const especialidades = await fetchEspecialidadesAll();
 
-  if (!facultad) {
+  // 🔹 Obtener carreras (para el select en el formulario)
+  const carreras = await fetchCarrerasAll();
+
+  if (!especialidad) {
     notFound();
   }
 
@@ -28,10 +34,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <main className="relative overflow-hidden">
       <Breadcrumbs
         breadcrumbs={[
-          { label: "Facultades", href: "/dashboard/faculty" },
+          { label: "Especialidades", href: "/dashboard/specialty" },
           {
-            label: "Editar facultad",
-            href: `/dashboard/faculty/${id}/edit`,
+            label: "Editar especialidad",
+            href: `/dashboard/specialty/${id}/edit`,
             active: true,
           },
         ]}
@@ -39,10 +45,17 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
         {/* Formulario de edición */}
-        <EditFacultadForm facultad={facultad} facultades={facultades} />
+        <EditEspecialidadForm
+          especialidad={especialidad}
+          especialidades={especialidades}
+          carreras={carreras}
+        />
 
         {/* Tabla lateral con las más recientes */}
-        <LatestFacultades facultades={facultades} id={facultad.id} />
+        <LatestEspecialidades
+          especialidades={especialidades}
+          id={especialidad.id}
+        />
       </div>
     </main>
   );
