@@ -12,6 +12,7 @@ export async function activateUser(id: number) {
     `;
 
     revalidatePath("/dashboard/users");
+    return { success: true };
   } catch (error) {
     console.error("❌ Error al activar usuario:", error);
     throw new Error("No se pudo activar el usuario.");

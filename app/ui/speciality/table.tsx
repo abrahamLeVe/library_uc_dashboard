@@ -1,12 +1,15 @@
 import { fetchFilteredEspecialidades } from "@/app/lib/data/speciality.data";
 import { DeleteEspecialidad, UpdateEspecialidad } from "./buttons";
+import { Session } from "next-auth";
 
 export default async function EspecialidadesTable({
   query,
   currentPage,
+  user,
 }: {
   query: string;
   currentPage: number;
+  user: Session["user"];
 }) {
   const especialidades = await fetchFilteredEspecialidades(query, currentPage);
 
@@ -53,7 +56,10 @@ export default async function EspecialidadesTable({
                     <td className="whitespace-nowrap py-3 pl-6 pr-6">
                       <div className="flex justify-center gap-2">
                         <UpdateEspecialidad id={especialidad.id} />
-                        <DeleteEspecialidad id={especialidad.id} />
+                        {/* Solo mostrar Delete si el usuario es ADMIN */}
+                        {user?.role === "ADMIN" && (
+                          <DeleteEspecialidad id={especialidad.id} />
+                        )}
                       </div>
                     </td>
                   </tr>

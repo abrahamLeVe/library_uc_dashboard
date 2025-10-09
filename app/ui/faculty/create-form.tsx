@@ -44,7 +44,7 @@ export default function CreateFacultyForm({
         className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl border border-gray-200 shadow-lg shadow-gray-100"
       >
         <h2 className="text-xl font-bold text-gray-800 text-center">
-          Registrar Facultad <span className="text-red-500">*</span>
+          Registrar Facultad
         </h2>
 
         {/* Nombre */}

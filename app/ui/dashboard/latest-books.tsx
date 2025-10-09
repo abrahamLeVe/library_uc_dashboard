@@ -16,8 +16,8 @@ export default async function LatestBooks() {
             <div
               key={book.id}
               className={clsx(
-                "flex flex-row items-center justify-between py-4",
-                { "border-t": i !== 0 }
+                "flex flex-row items-center justify-between py-4 ",
+                { "border-t border-gray-200": i !== 0 }
               )}
             >
               <div className="flex items-center flex-1 min-w-0">

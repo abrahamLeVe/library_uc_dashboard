@@ -24,22 +24,36 @@ export default function CreateEspecialidadForm({
 
   const [errorNombre, setErrorNombre] = useState("");
 
-  // ✅ Validar si el nombre ya existe (comparación insensible a mayúsculas)
+  // ✅ Verifica si el nombre ya existe en la lista de carreras
   const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value.trim();
     const existe = carreras.some(
-      (car) =>
-        car.especialidades?.some(
-          (esp) => esp.nombre.toLowerCase() === valor.toLowerCase()
-        ) ?? false
+      (car) => car.nombre.toLowerCase() === valor.toLowerCase()
     );
 
     if (existe) {
-      setErrorNombre("⚠️ Esta especialidad ya existe en alguna carrera.");
+      setErrorNombre("⚠️ Esta especialidad ya existe.");
     } else {
       setErrorNombre("");
     }
   };
+
+  // // ✅ Validar si el nombre ya existe (comparación insensible a mayúsculas)
+  // const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const valor = e.target.value.trim();
+  //   const existe = carreras.some(
+  //     (car) =>
+  //       car.especialidades?.some(
+  //         (esp) => esp.nombre.toLowerCase() === valor.toLowerCase()
+  //       ) ?? false
+  //   );
+
+  //   if (existe) {
+  //     setErrorNombre("⚠️ Esta especialidad ya existe en alguna carrera.");
+  //   } else {
+  //     setErrorNombre("");
+  //   }
+  // };
 
   return (
     <div className="md:col-span-4 flex justify-center">
@@ -48,7 +62,7 @@ export default function CreateEspecialidadForm({
         className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl border border-gray-200 shadow-lg shadow-gray-100"
       >
         <h2 className="text-xl font-bold text-gray-800 text-center">
-          Registrar Especialidad <span className="text-red-500">*</span>
+          Registrar Especialidad
         </h2>
 
         {/* Nombre */}

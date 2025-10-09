@@ -5,6 +5,7 @@ import CarrerasTable from "@/app/ui/career/table";
 import { nunito } from "@/app/ui/fonts";
 import Search from "@/app/ui/search";
 import { BooksTableSkeleton } from "@/app/ui/skeletons";
+import { auth } from "@/auth";
 import { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -19,6 +20,8 @@ export default async function Page(props: {
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
   const totalPages = await fetchCarrerasPages(query);
+  const session = await auth();
+  if (!session) return <div>Not authenticated</div>;
 
   return (
     <div className="relative overflow-x-hidden">
@@ -34,7 +37,11 @@ export default async function Page(props: {
       <div className="mt-4">
         <Suspense key={query + currentPage} fallback={<BooksTableSkeleton />}>
           <div className="overflow-x-auto">
-            <CarrerasTable query={query} currentPage={currentPage} />
+            <CarrerasTable
+              query={query}
+              currentPage={currentPage}
+              user={session.user}
+            />
           </div>
         </Suspense>
       </div>

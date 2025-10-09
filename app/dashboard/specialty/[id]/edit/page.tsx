@@ -8,8 +8,9 @@ import {
   fetchEspecialidadesAll,
 } from "@/app/lib/data/speciality.data";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
-import LatestEspecialidades from "@/app/ui/speciality/latest-speciality";
 import EditEspecialidadForm from "@/app/ui/speciality/edit-fom";
+import LatestEspecialidades from "@/app/ui/speciality/latest-speciality";
+import { auth } from "@/auth";
 
 export const metadata: Metadata = {
   title: "Editar Especialidad",
@@ -25,6 +26,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   // 🔹 Obtener carreras (para el select en el formulario)
   const carreras = await fetchCarrerasAll();
+  const session = await auth();
+  if (!session) return <div>Not authenticated</div>;
 
   if (!especialidad) {
     notFound();
@@ -55,6 +58,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <LatestEspecialidades
           especialidades={especialidades}
           id={especialidad.id}
+          user={session.user}
         />
       </div>
     </main>

@@ -1,12 +1,15 @@
 import { fetchFilteredFacultades } from "@/app/lib/data/faculty.data";
 import { DeleteFacultad, UpdateFacultad } from "./buttons";
+import { Session } from "next-auth";
 
 export default async function FacultadesTable({
   query,
   currentPage,
+  user,
 }: {
   query: string;
   currentPage: number;
+  user: Session["user"];
 }) {
   const facultades = await fetchFilteredFacultades(query, currentPage);
 
@@ -59,7 +62,10 @@ export default async function FacultadesTable({
                     <td className="whitespace-nowrap py-3 pl-6 pr-6">
                       <div className="flex justify-center gap-2">
                         <UpdateFacultad id={facultad.id} />
-                        <DeleteFacultad id={facultad.id} />
+                        {/* Solo mostrar Delete si el usuario es ADMIN */}
+                        {user?.role === "ADMIN" && (
+                          <DeleteFacultad id={facultad.id} />
+                        )}
                       </div>
                     </td>
                   </tr>

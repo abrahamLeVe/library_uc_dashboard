@@ -1,10 +1,11 @@
 import { fetchFacultadesPages } from "@/app/lib/data/faculty.data";
 import Pagination from "@/app/ui/books/pagination";
 import { CreateFacultad } from "@/app/ui/faculty/buttons";
-import TemasTable from "@/app/ui/faculty/table";
+import FacultadesTable from "@/app/ui/faculty/table";
 import { nunito } from "@/app/ui/fonts";
 import Search from "@/app/ui/search";
 import { BooksTableSkeleton } from "@/app/ui/skeletons";
+import { auth } from "@/auth";
 import { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -19,6 +20,8 @@ export default async function Page(props: {
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
   const totalPages = await fetchFacultadesPages(query);
+  const session = await auth();
+  if (!session) return <div>Not authenticated</div>;
 
   return (
     <div className="relative overflow-x-hidden">
@@ -34,7 +37,11 @@ export default async function Page(props: {
       <div className="mt-4">
         <Suspense key={query + currentPage} fallback={<BooksTableSkeleton />}>
           <div className="overflow-x-auto">
-            <TemasTable query={query} currentPage={currentPage} />
+            <FacultadesTable
+              query={query}
+              currentPage={currentPage}
+              user={session.user}
+            />
           </div>
         </Suspense>
       </div>

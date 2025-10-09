@@ -3,6 +3,7 @@ import { fetchFacultadesAll } from "@/app/lib/data/faculty.data";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
 import EditCarreraForm from "@/app/ui/career/edit-fom";
 import LatestCarreras from "@/app/ui/career/latest-career";
+import { auth } from "@/auth";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -18,6 +19,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const carrera = await fetchCarreraById(Number(id));
   const carreras = await fetchCarrerasAll();
   const facultades = await fetchFacultadesAll();
+  const session = await auth();
+  if (!session) return <div>Not authenticated</div>;
 
   if (!carrera) {
     notFound();
@@ -45,7 +48,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         />
 
         {/* Tabla lateral con las más recientes */}
-        <LatestCarreras carreras={carreras} id={carrera.id} />
+        <LatestCarreras
+          carreras={carreras}
+          id={carrera.id}
+          user={session.user}
+        />
       </div>
     </main>
   );

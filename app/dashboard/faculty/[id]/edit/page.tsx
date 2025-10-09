@@ -5,6 +5,7 @@ import {
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
 import EditFacultadForm from "@/app/ui/faculty/edit-fom";
 import LatestFacultades from "@/app/ui/faculty/latest-faculty";
+import { auth } from "@/auth";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -19,6 +20,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   // 🔹 Obtener la facultad específica y todas las facultades
   const facultad = await fetchFacultadById(Number(id));
   const facultades = await fetchFacultadesAll();
+  const session = await auth();
+  if (!session) return <div>Not authenticated</div>;
 
   if (!facultad) {
     notFound();
@@ -42,7 +45,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <EditFacultadForm facultad={facultad} facultades={facultades} />
 
         {/* Tabla lateral con las más recientes */}
-        <LatestFacultades facultades={facultades} id={facultad.id} />
+        <LatestFacultades
+          facultades={facultades}
+          id={facultad.id}
+          user={session.user}
+        />
       </div>
     </main>
   );

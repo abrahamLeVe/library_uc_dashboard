@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { fetchEspecialidadesPages } from "@/app/lib/data/speciality.data";
 import { CreateEspecialidad } from "@/app/ui/speciality/buttons";
 import EspecialidadesTable from "@/app/ui/speciality/table";
+import { auth } from "@/auth";
 
 export const metadata: Metadata = {
   title: "Especialidades",
@@ -18,6 +19,8 @@ export default async function Page(props: {
   const searchParams = await props.searchParams;
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
+  const session = await auth();
+  if (!session) return <div>Not authenticated</div>;
 
   // 🔹 Obtener total de páginas según filtro
   const totalPages = await fetchEspecialidadesPages(query);
@@ -39,7 +42,11 @@ export default async function Page(props: {
       <div className="mt-4">
         <Suspense key={query + currentPage} fallback={<BooksTableSkeleton />}>
           <div className="overflow-x-auto">
-            <EspecialidadesTable query={query} currentPage={currentPage} />
+            <EspecialidadesTable
+              query={query}
+              currentPage={currentPage}
+              user={session.user}
+            />
           </div>
         </Suspense>
       </div>

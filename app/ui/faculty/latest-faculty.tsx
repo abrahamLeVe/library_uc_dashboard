@@ -1,14 +1,17 @@
 import { Facultad } from "@/app/lib/definitions/faculty.definition";
 import { UpdateFacultad, DeleteFacultad } from "./buttons";
+import { Session } from "next-auth";
 
 interface LatestFacultadesProps {
   facultades: Facultad[];
   id?: number | string;
+  user: Session["user"];
 }
 
 export default function LatestFacultades({
   facultades,
   id,
+  user,
 }: LatestFacultadesProps) {
   return (
     <div className="md:col-span-4 overflow-y-auto h-[500px] text-sm">
@@ -41,7 +44,10 @@ export default function LatestFacultades({
                         {facultad.id != id && (
                           <>
                             <UpdateFacultad id={facultad.id} />
-                            <DeleteFacultad id={facultad.id} />
+                            {/* Solo mostrar Delete si el usuario es ADMIN */}
+                            {user?.role === "ADMIN" && (
+                              <DeleteFacultad id={facultad.id} />
+                            )}
                           </>
                         )}
                       </div>

@@ -3,6 +3,8 @@
 import { sql } from "../db";
 import { Carrera } from "../definitions/faculty.definition";
 
+const ITEMS_PER_PAGE = 10;
+
 /**
  * 📄 Obtener total de páginas de carreras (para paginación)
  */
@@ -14,8 +16,7 @@ export async function fetchCarrerasPages(query: string) {
   `;
 
   const total = count[0]?.total || 0;
-  const perPage = 5;
-  return Math.ceil(total / perPage);
+  return Math.ceil(total / ITEMS_PER_PAGE);
 }
 
 /**

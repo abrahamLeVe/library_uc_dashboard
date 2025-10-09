@@ -9,7 +9,7 @@ export default async function LatestUsers() {
       <div className="flow-root">
         <div className="inline-block min-w-full align-middle">
           <div className="rounded-xl bg-gray-50 p-2 shadow-sm md:pt-0">
-            <table className="min-w-full text-gray-900 border-collapse">
+            <table className="min-w-full border border-gray-200 text-sm text-gray-900">
               {/* 🧠 Encabezado fijo */}
               <thead className="sticky top-0 bg-gray-100 text-left text-sm font-semibold shadow-sm z-10">
                 <tr>
@@ -20,7 +20,7 @@ export default async function LatestUsers() {
                 </tr>
               </thead>
 
-              <tbody className="bg-white">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {users.length > 0 ? (
                   users.map((user) => (
                     <tr

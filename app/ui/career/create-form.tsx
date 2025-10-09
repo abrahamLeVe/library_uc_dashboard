@@ -46,7 +46,7 @@ export default function CreateCareerForm({
         className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl border border-gray-200 shadow-lg shadow-gray-100"
       >
         <h2 className="text-xl font-bold text-gray-800 text-center">
-          Registrar Carrera <span className="text-red-500">*</span>
+          Registrar Carrera
         </h2>
 
         {/* Nombre de la carrera */}

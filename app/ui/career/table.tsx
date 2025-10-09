@@ -1,12 +1,15 @@
 import { fetchFilteredCarreras } from "@/app/lib/data/career.data";
 import { DeleteCarrera, UpdateCarrera } from "./buttons";
+import { Session } from "next-auth";
 
 export default async function CarrerasTable({
   query,
   currentPage,
+  user,
 }: {
   query: string;
   currentPage: number;
+  user: Session["user"];
 }) {
   const carreras = await fetchFilteredCarreras(query, currentPage);
 
@@ -77,7 +80,10 @@ export default async function CarrerasTable({
                     <td className="whitespace-nowrap py-3 pl-6 pr-6">
                       <div className="flex justify-center gap-2">
                         <UpdateCarrera id={carrera.id} />
-                        <DeleteCarrera id={carrera.id} />
+                        {/* Solo mostrar Delete si el usuario es ADMIN */}
+                        {user?.role === "ADMIN" && (
+                          <DeleteCarrera id={carrera.id} />
+                        )}
                       </div>
                     </td>
                   </tr>

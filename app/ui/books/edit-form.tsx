@@ -117,10 +117,16 @@ export default function EditForm({
           {state.message}
         </div>
       )}
+      <p className="text-sm text-gray-600 mb-4">
+        Los campos marcados con <span className="text-red-500">*</span> son
+        obligatorios.
+      </p>
 
       {/* Facultad */}
       <div>
-        <label className="block text-sm font-medium">Facultad</label>
+        <label className="block text-sm font-medium">
+          Facultad<span className="text-red-500">*</span>
+        </label>
         <select
           value={facultadId ?? ""}
           onChange={(e) => {
@@ -144,7 +150,9 @@ export default function EditForm({
 
       {/* Carrera */}
       <div>
-        <label className="block text-sm font-medium">Carrera</label>
+        <label className="block text-sm font-medium">
+          Carrera<span className="text-red-500">*</span>
+        </label>
         <select
           value={carreraId ?? ""}
           onChange={(e) => {
@@ -170,7 +178,9 @@ export default function EditForm({
 
       {/* Especialidad */}
       <div>
-        <label className="block text-sm font-medium">Especialidad</label>
+        <label className="block text-sm font-medium">
+          Especialidad<span className="text-red-500">*</span>
+        </label>
         <select
           name="especialidad_id"
           value={especialidadId ?? ""}
@@ -195,7 +205,9 @@ export default function EditForm({
 
       {/* Autores */}
       <div>
-        <label className="block text-sm font-medium">Autores</label>
+        <label className="block text-sm font-medium">
+          Autores<span className="text-red-500">*</span>
+        </label>
         <select
           name="autores"
           multiple
@@ -221,7 +233,9 @@ export default function EditForm({
 
       {/* Título */}
       <div>
-        <label className="block text-sm font-medium">Título</label>
+        <label className="block text-sm font-medium">
+          Título<span className="text-red-500">*</span>
+        </label>
         <input
           type="text"
           name="titulo"
@@ -229,6 +243,31 @@ export default function EditForm({
           className="w-full rounded-md border px-3 py-2"
           required
         />
+      </div>
+
+      {/* PDF libro (👈 no se elimina, solo reemplaza) */}
+      <div>
+        <label className="block text-sm font-medium">
+          PDF del libro<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+          className="w-full rounded-md border px-3 py-2"
+        />
+        <FieldError errors={state.errors?.pdf_url} />
+        {libro.pdf_url_signed && (
+          <div className="mt-2 space-y-1">
+            <a
+              href={libro.pdf_url_signed}
+              target="_blank"
+              className="text-blue-600 underline"
+            >
+              Ver PDF actual
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Descripción */}
@@ -331,29 +370,6 @@ export default function EditForm({
             >
               Eliminar imagen actual
             </button>
-          </div>
-        )}
-      </div>
-
-      {/* PDF libro (👈 no se elimina, solo reemplaza) */}
-      <div>
-        <label className="block text-sm font-medium">PDF del libro</label>
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-          className="w-full rounded-md border px-3 py-2"
-        />
-        <FieldError errors={state.errors?.pdf_url} />
-        {libro.pdf_url_signed && (
-          <div className="mt-2 space-y-1">
-            <a
-              href={libro.pdf_url_signed}
-              target="_blank"
-              className="text-blue-600 underline"
-            >
-              Ver PDF actual
-            </a>
           </div>
         )}
       </div>

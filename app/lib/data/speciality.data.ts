@@ -2,7 +2,7 @@
 
 import { sql } from "../db";
 import { Carrera, Especialidad } from "../definitions/faculty.definition";
-
+const ITEMS_PER_PAGE = 10;
 /**
  * 📄 Obtener total de páginas de especialidades (para paginación)
  */
@@ -16,8 +16,7 @@ export async function fetchEspecialidadesPages(query: string) {
   `;
 
   const total = count[0]?.total || 0;
-  const perPage = 5;
-  return Math.ceil(total / perPage);
+  return Math.ceil(total / ITEMS_PER_PAGE);
 }
 
 /**
