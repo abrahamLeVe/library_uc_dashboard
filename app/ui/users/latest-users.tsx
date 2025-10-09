@@ -1,7 +1,7 @@
 import { fetchUsers } from "@/app/lib/data/users.data";
 import { ActivateUser, DeactivateUser, UpdateUser } from "./buttons";
 
-export default async function LatestUsers({ id }: { id?: number }) {
+export default async function LatestUsers() {
   const users = await fetchUsers();
 
   return (

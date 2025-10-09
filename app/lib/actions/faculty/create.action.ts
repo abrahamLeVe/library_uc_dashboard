@@ -54,6 +54,7 @@ export async function createFacultad(
     // Revalida rutas donde se muestran facultades
     revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/career");
+    revalidatePath("/dashboard/books");
 
     return {
       message: `✅ Facultad "${facultad.nombre}" creada con éxito`,

@@ -3,6 +3,8 @@
 import {
   ArchiveBoxIcon,
   BookOpenIcon,
+  BriefcaseIcon,
+  BuildingLibraryIcon,
   HomeIcon,
   HomeModernIcon,
   UserGroupIcon,
@@ -16,14 +18,18 @@ import { SideNavProps } from "./sidenav";
 const links = [
   { name: "Home", href: "/dashboard", icon: HomeIcon },
   { name: "Libros", href: "/dashboard/books", icon: BookOpenIcon },
-  {
-    name: "Categorías",
-    href: "/dashboard/category",
-    icon: ArchiveBoxIcon,
-    role: "ADMIN",
-  },
-  { name: "Facultades", href: "/dashboard/faculty", icon: HomeModernIcon },
   { name: "Autores", href: "/dashboard/author", icon: UserGroupIcon },
+  { name: "Facultades", href: "/dashboard/faculty", icon: HomeModernIcon },
+  {
+    name: "Carreras",
+    href: "/dashboard/career",
+    icon: BuildingLibraryIcon,
+  },
+  {
+    name: "Especialidades",
+    href: "/dashboard/specialty",
+    icon: BriefcaseIcon,
+  },
   { name: "Usuarios", href: "/dashboard/users", icon: UserIcon, role: "ADMIN" },
 ];
 

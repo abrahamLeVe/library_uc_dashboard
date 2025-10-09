@@ -19,7 +19,8 @@ export interface Facultad {
 export interface Carrera {
   id: number;
   nombre: string;
-  facultad_id: number;
+  facultad_id: string;
+  facultad_nombre?: string; // Nombre de la facultad asociada (opcional)
   especialidades?: Especialidad[]; // Relación opcional
 }
 
