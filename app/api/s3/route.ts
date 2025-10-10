@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
     // Subir archivo
     const uploadCommand = new PutObjectCommand({
       Bucket: bucketName,
-      Key: file.name, // <-- esto es lo que guardas en la DB
+      Key: file.name,
+      ContentLength: 31457280, // hasta 30 MB
       Body,
       ContentType: file.type,
     });
