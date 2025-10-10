@@ -347,6 +347,22 @@ export default function EditForm({
         />
       </div>
 
+      {/* URL del video (YouTube) */}
+      <div>
+        <label className="block text-sm font-medium">URL del video</label>
+        <input
+          type="url"
+          name="video_url"
+          defaultValue={libro.video_url ?? ""}
+          placeholder="https://www.youtube.com/watch?v=xxxxx"
+          className="w-full rounded-md border px-3 py-2"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Pega el enlace de YouTube. Ejemplo:
+          https://www.youtube.com/watch?v=abc123
+        </p>
+      </div>
+
       {/* Imagen */}
       <div>
         <label className="block text-sm font-medium">Imagen del libro</label>

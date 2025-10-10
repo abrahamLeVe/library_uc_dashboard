@@ -36,6 +36,7 @@ const EditSchema = z.object({
     .transform((val) => (val ? val.split(",").map((s) => s.trim()) : [])),
   examen_pdf_url: z.string().optional(),
   imagen: z.string().optional(),
+  video_url: z.string().optional(),
 });
 
 export type State = {
@@ -68,6 +69,7 @@ export async function updateBook(
     pdf_url: formData.get("pdf_url"),
     examen_pdf_url: formData.get("examen_pdf_url") || undefined,
     imagen: formData.get("imagen") || undefined,
+    video_url: formData.get("video_url") || undefined,
   });
 
   // Si hay errores → devolverlos al formulario
@@ -89,23 +91,24 @@ export async function updateBook(
   try {
     // Actualizar datos del libro
     await sql/*sql*/ `
-      UPDATE libros
-      SET titulo = ${data.titulo},
-          descripcion = ${data.descripcion ?? null},
-          isbn = ${data.isbn ?? null},
-          anio_publicacion = ${data.anio_publicacion ?? null},
-          editorial = ${data.editorial ?? null},
-          idioma = ${data.idioma ?? null},
-          paginas = ${data.paginas ?? null},
-          palabras_clave = ${data.palabras_clave ?? null},
-          pdf_url = ${data.pdf_url},
-          examen_pdf_url = ${data.examen_pdf_url ?? null},
-          imagen = ${data.imagen ?? null},
-          facultad_id = ${data.facultad_id},
-          carrera_id = ${data.carrera_id},
-          especialidad_id = ${data.especialidad_id}
-      WHERE id = ${data.id};
-    `;
+  UPDATE libros
+  SET titulo = ${data.titulo},
+      descripcion = ${data.descripcion ?? null},
+      isbn = ${data.isbn ?? null},
+      anio_publicacion = ${data.anio_publicacion ?? null},
+      editorial = ${data.editorial ?? null},
+      idioma = ${data.idioma ?? null},
+      paginas = ${data.paginas ?? null},
+      palabras_clave = ${data.palabras_clave ?? null},
+      pdf_url = ${data.pdf_url},
+      examen_pdf_url = ${data.examen_pdf_url ?? null},
+      imagen = ${data.imagen ?? null},
+      video_url = ${data.video_url ?? null}, -- ✅ agregado
+      facultad_id = ${data.facultad_id},
+      carrera_id = ${data.carrera_id},
+      especialidad_id = ${data.especialidad_id}
+  WHERE id = ${data.id};
+`;
 
     // Resetear autores del libro
     await sql/*sql*/ `

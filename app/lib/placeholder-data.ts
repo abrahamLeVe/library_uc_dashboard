@@ -155,6 +155,7 @@ export const libros = [
     carrera_id: 1101, // Administración y Finanzas
     especialidad_id: 1601, // Gestión Financiera
     created_at: "2025-01-15T10:00:00Z",
+    video_url: "https://www.youtube.com/live/CiM4o8GmUe0?si=u5i0s7gK1xW4rKB6",
   },
   {
     id: 1402,
@@ -174,6 +175,7 @@ export const libros = [
     carrera_id: 1102, // Ingeniería Civil
     especialidad_id: 1704, // Estructuras
     created_at: "2025-09-05T12:30:00Z",
+    video_url: "https://www.youtube.com/live/CiM4o8GmUe0?si=u5i0s7gK1xW4rKB6",
   },
   {
     id: 1403,
@@ -193,6 +195,7 @@ export const libros = [
     carrera_id: 1103, // Psicología
     especialidad_id: 1802, // Psicología Clínica
     created_at: "2025-09-10T09:15:00Z",
+    video_url: "https://www.youtube.com/live/CiM4o8GmUe0?si=u5i0s7gK1xW4rKB6",
   },
   {
     id: 1404,
@@ -212,6 +215,7 @@ export const libros = [
     carrera_id: 1104, // Derecho
     especialidad_id: 1901, // Derecho Penal
     created_at: "2025-09-15T14:45:00Z",
+    video_url: "https://www.youtube.com/live/CiM4o8GmUe0?si=u5i0s7gK1xW4rKB6",
   },
   {
     id: 1405,
@@ -231,6 +235,7 @@ export const libros = [
     carrera_id: 1105, // Medicina Humana
     especialidad_id: 2003, // Pediatría
     created_at: "2025-09-20T08:00:00Z",
+    video_url: "",
   },
 ];
 

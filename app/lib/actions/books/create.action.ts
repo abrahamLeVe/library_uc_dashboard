@@ -40,6 +40,7 @@ const FormSchema = z.object({
     .transform((val) => (val ? val.split(",").map((s) => s.trim()) : [])),
   examen_pdf_url: z.string().optional(),
   imagen: z.string().optional(),
+  video_url: z.string().optional(),
 });
 
 export type State = {
@@ -68,6 +69,7 @@ export async function createBook(prevState: State, formData: FormData) {
     pdf_url: formData.get("pdf_url"),
     examen_pdf_url: formData.get("examen_pdf_url") || undefined,
     imagen: formData.get("imagen") || undefined,
+    video_url: formData.get("video_url") || undefined,
   });
 
   if (!validatedFields.success) {
@@ -99,37 +101,36 @@ export async function createBook(prevState: State, formData: FormData) {
     pdf_url,
     examen_pdf_url,
     imagen,
+    video_url,
   } = validatedFields.data;
 
   try {
     // 1. Insertar libro con todas las relaciones
     const result = await sql/*sql*/ `
-      INSERT INTO libros (
-        titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
-        palabras_clave, pdf_url, examen_pdf_url, especialidad_id, carrera_id, facultad_id, imagen
-      )
-      VALUES (
-        ${titulo},
-        ${descripcion ?? null},
-        ${isbn ?? null},
-        ${anio_publicacion ?? null},
-        ${editorial ?? null},
-        ${idioma ?? null},
-        ${paginas ?? null},
-        ${
-          palabras_clave && palabras_clave.length > 0
-            ? sql.array(palabras_clave)
-            : null
-        },
-        ${pdf_url},
-        ${examen_pdf_url ?? null},
-        ${especialidad_id},
-        ${carrera_id},
-        ${facultad_id},
-        ${imagen ?? null}
-      )
-      RETURNING id;
-    `;
+  INSERT INTO libros (
+    titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
+    palabras_clave, pdf_url, examen_pdf_url, imagen, video_url,
+    facultad_id, carrera_id, especialidad_id
+  )
+  VALUES (
+    ${titulo},
+    ${descripcion ?? null},
+    ${isbn ?? null},
+    ${anio_publicacion ?? null},
+    ${editorial ?? null},
+    ${idioma ?? null},
+    ${paginas ?? null},
+    ${palabras_clave ?? null},
+    ${pdf_url},
+    ${examen_pdf_url ?? null},
+    ${imagen ?? null},
+    ${video_url ?? null}, -- ✅ nuevo campo
+    ${facultad_id},
+    ${carrera_id},
+    ${especialidad_id}
+  )
+  RETURNING id;
+`;
 
     const libroId = result[0].id;
 

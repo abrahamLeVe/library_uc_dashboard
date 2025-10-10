@@ -4,11 +4,10 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Torres Lara Dashboard",
+    template: "%s | Dashboard",
     default: "UC Library Dashboard",
   },
   description: "Biblioteca de libros y autores",
-  metadataBase: new URL("https://next-learn-dashboard.vercel.sh"),
 };
 
 export default function RootLayout({

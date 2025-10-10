@@ -55,6 +55,7 @@ export async function fetchFilteredBooks(query: string, currentPage: number) {
     l.pdf_url,
     l.examen_pdf_url,
     l.imagen,            -- <-- agregar aquí
+    l.video_url, 
     f.nombre AS facultad,
     c.nombre AS carrera,
     e.nombre AS especialidad,
@@ -77,7 +78,7 @@ export async function fetchFilteredBooks(query: string, currentPage: number) {
   GROUP BY 
     l.id, l.titulo, l.descripcion, l.anio_publicacion, 
     l.editorial, l.idioma, l.paginas, l.isbn,
-    l.pdf_url, l.examen_pdf_url, l.imagen,  -- <-- agregar aquí
+    l.pdf_url, l.examen_pdf_url, l.imagen, l.video_url,
     f.nombre, c.nombre, e.nombre
   ORDER BY l.created_at DESC
   LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
@@ -117,6 +118,7 @@ export async function fetchLibroById(id: string) {
         l.pdf_url,
         l.examen_pdf_url,
         l.imagen,
+        l.video_url,
         l.palabras_clave,
         l.especialidad_id,
         e.carrera_id,

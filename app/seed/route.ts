@@ -65,6 +65,7 @@ async function createTables() {
       pdf_url TEXT,
       examen_pdf_url TEXT,
       imagen TEXT,
+      video_url TEXT,
       facultad_id INT REFERENCES facultades(id) ON DELETE CASCADE,
       carrera_id INT REFERENCES carreras(id) ON DELETE CASCADE,
       especialidad_id INT REFERENCES especialidades(id) ON DELETE CASCADE,
@@ -172,7 +173,7 @@ async function seedLibros() {
     await sql`
       INSERT INTO libros (
         id, titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
-        palabras_clave, pdf_url, examen_pdf_url, imagen, facultad_id, carrera_id, especialidad_id, created_at
+        palabras_clave, pdf_url, examen_pdf_url, imagen, video_url, facultad_id, carrera_id, especialidad_id, created_at
       )
       OVERRIDING SYSTEM VALUE
       VALUES (
@@ -182,9 +183,9 @@ async function seedLibros() {
         ${l.editorial}, ${l.idioma}, ${l.paginas}, ${sql.array(
       l.palabras_clave
     )},
-        ${l.pdf_url}, ${l.examen_pdf_url}, ${l.imagen}, ${l.facultad_id}, ${
-      l.carrera_id
-    }, ${l.especialidad_id}, ${l.created_at}
+        ${l.pdf_url}, ${l.examen_pdf_url}, ${l.imagen},  ${l.video_url}, ${
+      l.facultad_id
+    }, ${l.carrera_id}, ${l.especialidad_id}, ${l.created_at}
       )
       ON CONFLICT (id) DO NOTHING;
     `;
