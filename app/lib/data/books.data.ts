@@ -1,23 +1,19 @@
-import postgres from "postgres";
+import { sql } from "../db";
 import { LatestBook } from "../definitions/books.definitions";
-
-const sql = postgres(process.env.POSTGRES_URL!, {
-  ssl: process.env.NODE_ENV === "production" ? "require" : false,
-});
 
 const ITEMS_PER_PAGE = 10;
 
-// =======================
-// LIBROS
-// =======================
+/* ============================================================
+📄 PAGINACIÓN DE LIBROS
+============================================================ */
 export async function fetchBooksPages(query: string) {
   try {
     const data = await sql/*sql*/ `
       SELECT COUNT(DISTINCT l.id) AS count
       FROM libros l
-      JOIN especialidades e ON l.especialidad_id = e.id
-      JOIN carreras c ON e.carrera_id = c.id
-      JOIN facultades f ON c.facultad_id = f.id
+      LEFT JOIN facultades f ON l.facultad_id = f.id
+      LEFT JOIN carreras c ON l.carrera_id = c.id
+      LEFT JOIN especialidades e ON l.especialidad_id = e.id
       LEFT JOIN libros_autores la ON l.id = la.libro_id
       LEFT JOIN autores a ON la.autor_id = a.id
       WHERE 
@@ -38,51 +34,54 @@ export async function fetchBooksPages(query: string) {
   }
 }
 
+/* ============================================================
+📚 LIBROS FILTRADOS (CON PÁGINAS)
+============================================================ */
 export async function fetchFilteredBooks(query: string, currentPage: number) {
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
     const data = await sql/*sql*/ `
-  SELECT 
-    l.id,
-    l.titulo,
-    l.descripcion,
-    l.anio_publicacion AS anio,
-    l.editorial,
-    l.idioma,
-    l.paginas,
-    l.isbn,
-    l.pdf_url,
-    l.examen_pdf_url,
-    l.imagen,            -- <-- agregar aquí
-    l.video_url, 
-    f.nombre AS facultad,
-    c.nombre AS carrera,
-    e.nombre AS especialidad,
-    COALESCE(string_agg(a.nombre, ', '), 'Autor desconocido') AS autores
-  FROM libros l
-  JOIN especialidades e ON l.especialidad_id = e.id
-  JOIN carreras c ON e.carrera_id = c.id
-  JOIN facultades f ON c.facultad_id = f.id
-  LEFT JOIN libros_autores la ON l.id = la.libro_id
-  LEFT JOIN autores a ON la.autor_id = a.id
-  WHERE 
-    l.titulo ILIKE ${`%${query}%`} OR
-    l.descripcion ILIKE ${`%${query}%`} OR
-    l.editorial ILIKE ${`%${query}%`} OR
-    l.anio_publicacion::text ILIKE ${`%${query}%`} OR
-    f.nombre ILIKE ${`%${query}%`} OR
-    c.nombre ILIKE ${`%${query}%`} OR
-    e.nombre ILIKE ${`%${query}%`} OR
-    a.nombre ILIKE ${`%${query}%`}
-  GROUP BY 
-    l.id, l.titulo, l.descripcion, l.anio_publicacion, 
-    l.editorial, l.idioma, l.paginas, l.isbn,
-    l.pdf_url, l.examen_pdf_url, l.imagen, l.video_url,
-    f.nombre, c.nombre, e.nombre
-  ORDER BY l.created_at DESC
-  LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
-`;
+      SELECT 
+        l.id,
+        l.titulo,
+        l.descripcion,
+        l.anio_publicacion AS anio,
+        l.editorial,
+        l.idioma,
+        l.paginas,
+        l.isbn,
+        l.pdf_url,
+        l.examen_pdf_url,
+        l.imagen,
+        l.video_urls,
+        f.nombre AS facultad,
+        c.nombre AS carrera,
+        e.nombre AS especialidad,
+        COALESCE(string_agg(a.nombre, ', '), 'Autor desconocido') AS autores
+      FROM libros l
+      LEFT JOIN facultades f ON l.facultad_id = f.id
+      LEFT JOIN carreras c ON l.carrera_id = c.id
+      LEFT JOIN especialidades e ON l.especialidad_id = e.id
+      LEFT JOIN libros_autores la ON l.id = la.libro_id
+      LEFT JOIN autores a ON la.autor_id = a.id
+      WHERE 
+        l.titulo ILIKE ${`%${query}%`} OR
+        l.descripcion ILIKE ${`%${query}%`} OR
+        l.editorial ILIKE ${`%${query}%`} OR
+        l.anio_publicacion::text ILIKE ${`%${query}%`} OR
+        f.nombre ILIKE ${`%${query}%`} OR
+        c.nombre ILIKE ${`%${query}%`} OR
+        e.nombre ILIKE ${`%${query}%`} OR
+        a.nombre ILIKE ${`%${query}%`}
+      GROUP BY 
+        l.id, l.titulo, l.descripcion, l.anio_publicacion, 
+        l.editorial, l.idioma, l.paginas, l.isbn,
+        l.pdf_url, l.examen_pdf_url, l.imagen, l.video_urls,
+        f.nombre, c.nombre, e.nombre
+      ORDER BY l.created_at DESC
+      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
+    `;
 
     return data;
   } catch (error) {
@@ -91,18 +90,9 @@ export async function fetchFilteredBooks(query: string, currentPage: number) {
   }
 }
 
-// =======================
-// LIBROS POR MES
-// =======================
-export type LibrosPorMesItem = {
-  mes: number;
-  anio: number;
-  total: number;
-};
-
-// =======================
-// LIBRO POR ID
-// =======================
+/* ============================================================
+📘 LIBRO POR ID
+============================================================ */
 export async function fetchLibroById(id: string) {
   try {
     const data = await sql/*sql*/ `
@@ -118,11 +108,14 @@ export async function fetchLibroById(id: string) {
         l.pdf_url,
         l.examen_pdf_url,
         l.imagen,
-        l.video_url,
+        l.video_urls,
         l.palabras_clave,
+        l.facultad_id,
+        l.carrera_id,
         l.especialidad_id,
-        e.carrera_id,
-        c.facultad_id,
+        f.nombre AS facultad_nombre,
+        c.nombre AS carrera_nombre,
+        e.nombre AS especialidad_nombre,
         COALESCE(
           json_agg(
             json_build_object('id', a.id, 'nombre', a.nombre)
@@ -130,13 +123,13 @@ export async function fetchLibroById(id: string) {
           '[]'
         ) AS autores
       FROM libros l
-      JOIN especialidades e ON l.especialidad_id = e.id
-      JOIN carreras c ON e.carrera_id = c.id
-      JOIN facultades f ON c.facultad_id = f.id
+      LEFT JOIN facultades f ON l.facultad_id = f.id
+      LEFT JOIN carreras c ON l.carrera_id = c.id
+      LEFT JOIN especialidades e ON l.especialidad_id = e.id
       LEFT JOIN libros_autores la ON l.id = la.libro_id
       LEFT JOIN autores a ON la.autor_id = a.id
       WHERE l.id = ${id}
-      GROUP BY l.id, e.carrera_id, c.facultad_id;
+      GROUP BY l.id, f.nombre, c.nombre, e.nombre;
     `;
 
     return data[0];
@@ -145,6 +138,15 @@ export async function fetchLibroById(id: string) {
     throw new Error("No se pudo obtener el libro.");
   }
 }
+
+/* ============================================================
+📅 LIBROS POR MES
+============================================================ */
+export type LibrosPorMesItem = {
+  mes: number;
+  anio: number;
+  total: number;
+};
 
 export async function fetchLibrosPorMes(): Promise<LibrosPorMesItem[]> {
   try {
@@ -164,9 +166,9 @@ export async function fetchLibrosPorMes(): Promise<LibrosPorMesItem[]> {
   }
 }
 
-// =======================
-// DASHBOARD CARDS
-// =======================
+/* ============================================================
+📊 DASHBOARD CARDS
+============================================================ */
 export async function fetchCardData() {
   try {
     const queries = await Promise.all([
@@ -194,9 +196,9 @@ export async function fetchCardData() {
   }
 }
 
-// =======================
-// ÚLTIMOS LIBROS
-// =======================
+/* ============================================================
+🆕 ÚLTIMOS LIBROS
+============================================================ */
 export async function fetchLatestBooks(): Promise<LatestBook[]> {
   try {
     const data = await sql<LatestBook[]>`
@@ -216,7 +218,7 @@ export async function fetchLatestBooks(): Promise<LatestBook[]> {
           '[]'
         ) AS autores
       FROM libros l
-      JOIN especialidades e ON l.especialidad_id = e.id
+      LEFT JOIN especialidades e ON l.especialidad_id = e.id
       LEFT JOIN libros_autores la ON l.id = la.libro_id
       LEFT JOIN autores a ON la.autor_id = a.id
       GROUP BY l.id, e.nombre

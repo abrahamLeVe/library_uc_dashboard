@@ -12,9 +12,12 @@ export interface Libro {
   palabras_clave: string[];
   pdf_url: string;
   examen_pdf_url: string;
-  video_url: string | null; // 👈 nuevo
+  imagen: string;
+  facultad_id: number;
+  carrera_id: number;
   especialidad_id: number;
-  autor_id: number;
+  created_at: string;
+  video_urls: string[];
 }
 
 export interface LibroAsignado {

@@ -94,37 +94,3 @@ export async function fetchFacultadById(id: number): Promise<Facultad | null> {
     return null;
   }
 }
-
-// =======================
-// CARRERAS
-// =======================
-export async function fetchCarreras() {
-  try {
-    const carreras = await sql/*sql*/ `
-      SELECT id, nombre, facultad_id
-      FROM carreras
-      ORDER BY nombre ASC
-    `;
-    return carreras;
-  } catch (error) {
-    console.error("❌ Error fetching carreras:", error);
-    return [];
-  }
-}
-
-// =======================
-// ESPECIALIDADES
-// =======================
-export async function fetchEspecialidades() {
-  try {
-    const especialidades = await sql/*sql*/ `
-      SELECT id, nombre, carrera_id
-      FROM especialidades
-      ORDER BY nombre ASC
-    `;
-    return especialidades;
-  } catch (error) {
-    console.error("❌ Error fetching especialidades:", error);
-    return [];
-  }
-}

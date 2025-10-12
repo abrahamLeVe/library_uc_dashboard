@@ -23,7 +23,7 @@ export default async function EspecialidadesTable({
               <tr>
                 <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Carrera Asociada</th>
+                <th className="px-4 py-3">Carreras Asociadas</th>
                 <th className="px-4 py-3 text-center w-32">Acciones</th>
               </tr>
             </thead>
@@ -42,13 +42,15 @@ export default async function EspecialidadesTable({
                     </td>
 
                     <td className="px-4 py-3">
-                      {especialidad.carrera ? (
-                        <span className="text-blue-600">
-                          {especialidad.carrera.nombre}
-                        </span>
+                      {especialidad.carreras?.length > 0 ? (
+                        <ul className="list-disc list-inside text-blue-600">
+                          {especialidad.carreras.map((carrera: any) => (
+                            <li key={carrera.id}>{carrera.nombre}</li>
+                          ))}
+                        </ul>
                       ) : (
                         <span className="text-gray-400 italic">
-                          Sin carrera asignada
+                          Sin carreras asociadas
                         </span>
                       )}
                     </td>

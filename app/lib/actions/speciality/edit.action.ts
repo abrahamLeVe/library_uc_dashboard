@@ -1,88 +1,88 @@
 "use server";
 
-import postgres from "postgres";
 import { z } from "zod";
+import { sql } from "../../db";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
-
-/**
- * ✅ Esquema de validación Zod para actualización de especialidad
- */
-const EspecialidadEditSchema = z.object({
-  id: z.string().min(1, { message: "El ID de la especialidad es requerido." }),
-  nombre: z
-    .string()
-    .min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
-  carrera_id: z.string().min(1, { message: "Debe seleccionar una carrera." }),
+const UpdateEspecialidadSchema = z.object({
+  id: z.string().min(1, "ID inválido."),
+  nombre: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+  carreras: z.string().refine((val) => {
+    try {
+      const arr = JSON.parse(val);
+      return Array.isArray(arr) && arr.length > 0;
+    } catch {
+      return false;
+    }
+  }, "Debe seleccionar al menos una carrera."),
 });
 
 export type StateUpdateEspecialidad = {
-  errors?: Record<string, string[]>;
-  message?: string | null;
-  values?: Record<string, string>;
+  message: string | null;
+  errors?: {
+    id?: string[];
+    nombre?: string[];
+    carreras?: string[];
+  };
 };
 
-/**
- * ✅ Acción del servidor: Actualizar especialidad por ID
- */
 export async function updateEspecialidadById(
   prevState: StateUpdateEspecialidad,
   formData: FormData
 ): Promise<StateUpdateEspecialidad> {
-  // 1️⃣ Validar los campos con Zod
-  const validatedFields = EspecialidadEditSchema.safeParse({
+  const validated = UpdateEspecialidadSchema.safeParse({
     id: formData.get("id"),
-    nombre: formData.get("nombre"),
-    carrera_id: formData.get("carrera_id"),
+    nombre: formData.get("nombre")?.toString().trim(),
+    carreras: formData.get("carreras")?.toString(),
   });
 
-  // 2️⃣ Si hay errores → devolvemos los mensajes claros y valores originales
-  if (!validatedFields.success) {
+  if (!validated.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "Faltan campos requeridos o contienen errores.",
-      values: Object.fromEntries(
-        Array.from(formData.keys()).map((key) => [
-          key,
-          String(formData.get(key)),
-        ])
-      ),
+      message: "❌ Datos inválidos.",
+      errors: validated.error.flatten().fieldErrors,
     };
   }
 
-  const data = validatedFields.data;
+  const { id, nombre, carreras } = validated.data;
+  const carrerasArr: number[] = JSON.parse(carreras);
 
   try {
-    // 3️⃣ Actualizar especialidad
-    const result = await sql/*sql*/ `
-      UPDATE especialidades
-      SET nombre = ${data.nombre}, carrera_id = ${data.carrera_id}
-      WHERE id = ${data.id}
-      RETURNING id, nombre, carrera_id;
+    // Verificar duplicado (excluyendo el actual)
+    const existing = await sql`
+      SELECT id FROM especialidades 
+      WHERE LOWER(nombre) = LOWER(${nombre}) AND id <> ${id}
+      LIMIT 1;
     `;
-
-    // 4️⃣ Si no se encuentra la especialidad
-    if (result.length === 0) {
+    if (existing.length > 0) {
       return {
-        message: "⚠️ No se encontró la especialidad especificada.",
-        values: data,
+        message: "⚠️ Ya existe otra especialidad con ese nombre.",
+        errors: { nombre: ["Este nombre ya está en uso."] },
       };
     }
 
-    // 5️⃣ Revalidar rutas relacionadas
-    revalidatePath("/dashboard/specialty");
-    revalidatePath("/dashboard/books");
+    // Actualizar nombre
+    await sql`
+      UPDATE especialidades
+      SET nombre = ${nombre}
+      WHERE id = ${id};
+    `;
 
-    return {
-      message: `✅ Especialidad "${data.nombre}" actualizada con éxito.`,
-      values: data,
-    };
+    // Actualizar relaciones (borramos y reinsertamos)
+    await sql`DELETE FROM carreras_especialidades WHERE especialidad_id = ${id};`;
+
+    for (const carreraId of carrerasArr) {
+      await sql`
+        INSERT INTO carreras_especialidades (carrera_id, especialidad_id)
+        VALUES (${carreraId}, ${id});
+      `;
+    }
+
+    revalidatePath("/dashboard/specialty");
+    revalidatePath("/dashboard/career");
+
+    return { message: `✅ Especialidad "${nombre}" actualizada con éxito.` };
   } catch (error: any) {
-    console.error("❌ Error en la base de datos:", error);
-    return {
-      message: "Error al actualizar la especialidad en la base de datos.",
-    };
+    console.error("❌ Error actualizando especialidad:", error);
+    return { message: "❌ Error al actualizar la especialidad." };
   }
 }

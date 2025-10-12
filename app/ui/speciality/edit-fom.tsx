@@ -1,17 +1,21 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Especialidad } from "@/app/lib/definitions/faculty.definition"; // o si tienes un archivo separado: "@/app/lib/definitions/specialty.definition"
+import {
+  Carrera,
+  Especialidad,
+} from "@/app/lib/definitions/faculty.definition";
 import {
   StateUpdateEspecialidad,
   updateEspecialidadById,
 } from "@/app/lib/actions/speciality/edit.action";
 
 interface EditEspecialidadFormProps {
-  especialidad: Especialidad; // Especialidad actual que se va a editar
-  especialidades: Especialidad[]; // Lista completa (para validar duplicados)
-  carreras: { id: number; nombre: string }[]; // Lista de carreras disponibles
+  especialidad: Especialidad;
+  especialidades: Especialidad[];
+  carreras: Carrera[];
 }
 
 const initialState: StateUpdateEspecialidad = { message: null, errors: {} };
@@ -21,40 +25,56 @@ export default function EditEspecialidadForm({
   especialidades,
   carreras,
 }: EditEspecialidadFormProps) {
+  const router = useRouter();
   const [state, formAction, isPending] = useActionState(
     updateEspecialidadById,
     initialState
   );
   const [errorNombre, setErrorNombre] = useState("");
+  const [selectedCarreras, setSelectedCarreras] = useState<number[]>(
+    especialidad.carreras.map((c) => c.id)
+  );
 
   const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value.trim();
-
-    // Verificar si ya existe otra especialidad con el mismo nombre (excluyendo la actual)
     const existe = especialidades.some(
       (esp) =>
         esp.nombre.toLowerCase() === valor.toLowerCase() &&
         esp.id !== especialidad.id
     );
-
-    if (existe) {
-      setErrorNombre("⚠️ Esta especialidad ya existe.");
-    } else {
-      setErrorNombre("");
-    }
+    setErrorNombre(existe ? "⚠️ Esta especialidad ya existe." : "");
   };
+
+  const handleCarreraToggle = (id: number) => {
+    setSelectedCarreras((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
+
+  // 👇 Cuando el estado de la acción cambia y fue exitoso, refresca datos del servidor
+  useEffect(() => {
+    if (
+      state.message &&
+      state.message.startsWith("✅") &&
+      (!state.errors || Object.keys(state.errors).length === 0)
+    ) {
+      router.refresh();
+    }
+  }, [state, router]);
 
   return (
     <div className="md:col-span-4 flex justify-center">
       <form
-        action={formAction}
+        action={(formData) => {
+          formData.set("carreras", JSON.stringify(selectedCarreras));
+          formAction(formData);
+        }}
         className="w-full max-w-md space-y-5 bg-white p-8 rounded-2xl border border-gray-200 shadow-lg shadow-gray-100"
       >
         <h2 className="text-xl font-bold text-gray-800 text-center">
           Editar Especialidad
         </h2>
 
-        {/* Campo oculto ID */}
         <input type="hidden" name="id" value={especialidad.id} />
 
         {/* Nombre */}
@@ -72,7 +92,6 @@ export default function EditEspecialidadForm({
             defaultValue={especialidad.nombre}
             onChange={handleNombreChange}
             required
-            placeholder="Ej: Ingeniería de Software"
             className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all duration-200"
           />
           {errorNombre && (
@@ -81,32 +100,32 @@ export default function EditEspecialidadForm({
           <FieldError errors={state.errors?.nombre} />
         </div>
 
-        {/* Selección de Carrera */}
+        {/* Carreras múltiples */}
         <div>
-          <label
-            htmlFor="carrera_id"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Carrera <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Carreras asociadas <span className="text-red-500">*</span>
           </label>
-          <select
-            id="carrera_id"
-            name="carrera_id"
-            defaultValue={especialidad.carrera_id || ""}
-            required
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all duration-200"
-          >
-            <option value="">Seleccione una carrera</option>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border p-2 rounded-lg">
             {carreras.map((carrera) => (
-              <option key={carrera.id} value={carrera.id}>
+              <label
+                key={carrera.id}
+                className="flex items-center gap-2 text-sm"
+              >
+                <input
+                  type="checkbox"
+                  value={carrera.id}
+                  checked={selectedCarreras.includes(carrera.id)}
+                  onChange={() => handleCarreraToggle(carrera.id)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
                 {carrera.nombre}
-              </option>
+              </label>
             ))}
-          </select>
-          <FieldError errors={state.errors?.carrera_id} />
+          </div>
+          <FieldError errors={state.errors?.carreras} />
         </div>
 
-        {/* Mensaje de resultado */}
+        {/* Mensaje */}
         {state.message && (
           <div
             className={`p-3 rounded-md text-sm ${
@@ -120,19 +139,17 @@ export default function EditEspecialidadForm({
         )}
 
         {/* Botones */}
-        <div className="flex justify-end items-center gap-3">
-          <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
-            <Link
-              href="/dashboard/specialty"
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-all duration-200"
-            >
-              Cancelar
-            </Link>
-          </div>
+        <div className="flex justify-end gap-3">
+          <Link
+            href="/dashboard/specialty"
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Cancelar
+          </Link>
           <button
             type="submit"
             disabled={isPending || !!errorNombre}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500 focus:ring-2 focus:ring-blue-400 disabled:opacity-50 transition-all duration-200"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500 disabled:opacity-50 transition-all"
           >
             {isPending ? "Guardando..." : "Guardar cambios"}
           </button>
@@ -147,7 +164,7 @@ function FieldError({ errors }: { errors?: string[] }) {
   return (
     <div aria-live="polite">
       {errors.map((err) => (
-        <p key={err} className="mt-2 text-sm text-red-500">
+        <p key={err} className="mt-1 text-sm text-red-500">
           {err}
         </p>
       ))}

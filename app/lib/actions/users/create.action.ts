@@ -27,7 +27,7 @@ const FormSchemaUser = z.object({
   password: z
     .string()
     .min(6, { message: "La contraseña debe tener mínimo 6 caracteres." }),
-  role: z.enum(["ADMIN", "ASISTENTE", "ALUMNO"], {
+  role: z.enum(["BIBLIOTECARIO"], {
     message: "Rol inválido.",
   }),
 });
@@ -41,7 +41,7 @@ export async function createUser(
     name: formData.get("name")?.toString().trim(),
     email: formData.get("email")?.toString().trim(),
     password: formData.get("password")?.toString(),
-    role: formData.get("role")?.toString().toUpperCase() || "ALUMNO",
+    role: formData.get("role")?.toString().toUpperCase() || "BIBLIOTECARIO",
   });
 
   // ❌ Errores de validación
@@ -52,7 +52,7 @@ export async function createUser(
       values: {
         name: formData.get("name")?.toString() || "",
         email: formData.get("email")?.toString() || "",
-        role: formData.get("role")?.toString() || "ALUMNO",
+        role: formData.get("role")?.toString() || "BIBLIOTECARIO",
       },
     };
   }

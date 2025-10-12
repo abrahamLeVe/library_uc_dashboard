@@ -1,17 +1,11 @@
 "use server";
 
-import postgres from "postgres";
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+import { sql } from "../../db";
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
-
-/**
- * Validación de formulario para un libro
- */
 const FormSchema = z.object({
-  // Relaciones
   facultad_id: z.string().min(1, { message: "Seleccione una facultad." }),
   carrera_id: z.string().min(1, { message: "Seleccione una carrera." }),
   especialidad_id: z
@@ -20,14 +14,11 @@ const FormSchema = z.object({
   autores: z
     .array(z.string())
     .min(1, { message: "Seleccione al menos un autor." }),
-
-  // Vitales
   titulo: z
     .string()
     .min(3, { message: "El título debe tener al menos 3 caracteres." }),
   pdf_url: z.string().min(3, { message: "Inserte la URL del PDF" }),
 
-  // Opcionales
   descripcion: z.string().optional(),
   isbn: z.string().optional(),
   anio_publicacion: z.coerce.number().optional(),
@@ -38,9 +29,10 @@ const FormSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? val.split(",").map((s) => s.trim()) : [])),
+
   examen_pdf_url: z.string().optional(),
   imagen: z.string().optional(),
-  video_url: z.string().optional(),
+  video_urls: z.array(z.string()).optional(), // ✅ ahora array
 });
 
 export type State = {
@@ -49,9 +41,6 @@ export type State = {
   values?: Record<string, string | string[]>;
 };
 
-/**
- * Acción de crear libro con autores relacionados
- */
 export async function createBook(prevState: State, formData: FormData) {
   const validatedFields = FormSchema.safeParse({
     facultad_id: formData.get("facultad_id"),
@@ -69,7 +58,7 @@ export async function createBook(prevState: State, formData: FormData) {
     pdf_url: formData.get("pdf_url"),
     examen_pdf_url: formData.get("examen_pdf_url") || undefined,
     imagen: formData.get("imagen") || undefined,
-    video_url: formData.get("video_url") || undefined,
+    video_urls: formData.getAll("video_urls"), // ✅ recibe array
   });
 
   if (!validatedFields.success) {
@@ -84,7 +73,6 @@ export async function createBook(prevState: State, formData: FormData) {
       ) as Record<string, string | string[]>,
     };
   }
-
   const {
     facultad_id,
     carrera_id,
@@ -101,50 +89,67 @@ export async function createBook(prevState: State, formData: FormData) {
     pdf_url,
     examen_pdf_url,
     imagen,
-    video_url,
+    video_urls,
   } = validatedFields.data;
 
   try {
-    // 1. Insertar libro con todas las relaciones
     const result = await sql/*sql*/ `
-  INSERT INTO libros (
-    titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
-    palabras_clave, pdf_url, examen_pdf_url, imagen, video_url,
-    facultad_id, carrera_id, especialidad_id
-  )
-  VALUES (
-    ${titulo},
-    ${descripcion ?? null},
-    ${isbn ?? null},
-    ${anio_publicacion ?? null},
-    ${editorial ?? null},
-    ${idioma ?? null},
-    ${paginas ?? null},
-    ${palabras_clave ?? null},
-    ${pdf_url},
-    ${examen_pdf_url ?? null},
-    ${imagen ?? null},
-    ${video_url ?? null}, -- ✅ nuevo campo
-    ${facultad_id},
-    ${carrera_id},
-    ${especialidad_id}
-  )
-  RETURNING id;
-`;
+      INSERT INTO libros (
+        titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
+        palabras_clave, pdf_url, examen_pdf_url, imagen, video_urls,
+        facultad_id, carrera_id, especialidad_id
+      )
+      VALUES (
+        ${titulo},
+        ${descripcion ?? null},
+        ${isbn ?? null},
+        ${anio_publicacion ?? null},
+        ${editorial ?? null},
+        ${idioma ?? null},
+        ${paginas ?? null},
+        ${palabras_clave || []},
+        ${pdf_url},
+        ${examen_pdf_url ?? null},
+        ${imagen ?? null},
+        ${video_urls || []}, -- ✅ se guarda como arreglo
+        ${facultad_id},
+        ${carrera_id},
+        ${especialidad_id}
+      )
+      RETURNING id;
+    `;
 
     const libroId = result[0].id;
 
-    // 2. Insertar autores en tabla intermedia
     for (const autorId of autores) {
       await sql/*sql*/ `
-        INSERT INTO libros_autores (libro_id, autor_id)
-        VALUES (${libroId}, ${autorId});
-      `;
+    INSERT INTO libros_autores (libro_id, autor_id)
+    VALUES (${libroId}, ${autorId});
+  `;
     }
   } catch (error: any) {
-    console.error("Database Error:", error);
+    console.error("❌ Error al crear libro:", error.detail);
+
+    const errors: Record<string, string[]> = {};
+
+    if (error.code === "23505" && error.detail) {
+      // Regex para extraer la columna del mensaje
+      const match = error.detail.match(/\((.*?)\)=\((.*?)\)/);
+      if (match) {
+        const column = match[1]; // por ejemplo "isbn"
+        const value = match[2]; // por ejemplo "978-1234567890"
+        errors[column] = [`El valor "${value}" ya existe.`];
+      }
+    }
+
+    // Si no se reconoce el error, lo enviamos como error general
+    if (Object.keys(errors).length === 0) {
+      errors["_"] = ["Error desconocido al crear el libro."];
+    }
+
     return {
-      message: "Error en la base de datos: No se pudo crear el libro.",
+      message: "Corrige los errores en los campos indicados.",
+      errors,
     };
   }
 

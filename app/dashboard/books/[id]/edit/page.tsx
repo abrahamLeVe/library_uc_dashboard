@@ -1,14 +1,12 @@
+import { fetchAutores } from "@/app/lib/data/authors.data";
 import { fetchLibroById } from "@/app/lib/data/books.data";
+import { fetchCarrerasAll } from "@/app/lib/data/career.data";
+import { fetchFacultadesAll } from "@/app/lib/data/faculty.data";
+import { fetchEspecialidadesAll } from "@/app/lib/data/speciality.data";
+import { getPdfUrl } from "@/app/lib/s3";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
 import Form from "@/app/ui/books/edit-form";
 import { Metadata } from "next";
-import { getPdfUrl } from "@/app/lib/s3";
-import {
-  fetchCarreras,
-  fetchEspecialidades,
-  fetchFacultadesAll,
-} from "@/app/lib/data/faculty.data";
-import { fetchAutores } from "@/app/lib/data/authors.data";
 
 export const metadata: Metadata = {
   title: "Editar Libro",
@@ -23,11 +21,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     await Promise.all([
       fetchAutores(),
       fetchFacultadesAll(),
-      fetchCarreras(),
-      fetchEspecialidades(),
+      fetchCarrerasAll(),
+      fetchEspecialidadesAll(),
       fetchLibroById(id),
     ]);
-  console.log("libro", libro);
+
   // 2. Generamos signed URLs para vista previa si existen archivos
   const libroConUrls = {
     ...libro,

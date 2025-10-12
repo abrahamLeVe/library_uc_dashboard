@@ -22,7 +22,7 @@ export type StateCarrera = {
   values?: {
     id?: number;
     nombre: string;
-    facultad_id: string;
+    facultad_id: string | number;
   };
 };
 

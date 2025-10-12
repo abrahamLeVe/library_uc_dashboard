@@ -1,15 +1,13 @@
 "use server";
 
-import postgres from "postgres";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { sql } from "../../db";
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
-
-/**
- * Validación de campos con Zod
- */
+// =======================
+// Esquema de validación
+// =======================
 const EditSchema = z.object({
   id: z.string().min(1, { message: "El ID del libro es requerido." }),
   facultad_id: z.string().min(1, { message: "Seleccione una facultad." }),
@@ -36,7 +34,7 @@ const EditSchema = z.object({
     .transform((val) => (val ? val.split(",").map((s) => s.trim()) : [])),
   examen_pdf_url: z.string().optional(),
   imagen: z.string().optional(),
-  video_url: z.string().optional(),
+  video_urls: z.array(z.string()).optional(), // ✅ múltiples URLs
 });
 
 export type State = {
@@ -45,9 +43,9 @@ export type State = {
   values?: Record<string, string | string[]>;
 };
 
-/**
- * Acción para actualizar libro
- */
+// =======================
+// Acción principal
+// =======================
 export async function updateBook(
   prevState: State,
   formData: FormData
@@ -69,10 +67,10 @@ export async function updateBook(
     pdf_url: formData.get("pdf_url"),
     examen_pdf_url: formData.get("examen_pdf_url") || undefined,
     imagen: formData.get("imagen") || undefined,
-    video_url: formData.get("video_url") || undefined,
+    video_urls: formData.getAll("video_urls"), // ✅ array de inputs
   });
 
-  // Si hay errores → devolverlos al formulario
+  // ⚠️ Manejo de errores
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
@@ -86,37 +84,82 @@ export async function updateBook(
     };
   }
 
-  const data = validatedFields.data;
+  // =======================
+  // Normalización segura
+  // =======================
+  const rawData = validatedFields.data;
 
+  const data = {
+    ...rawData,
+    id: Number(rawData.id),
+    facultad_id: Number(rawData.facultad_id),
+    carrera_id: Number(rawData.carrera_id),
+    especialidad_id: Number(rawData.especialidad_id),
+
+    autores: (() => {
+      let autores = rawData.autores;
+      // Si vino como string JSON, lo parseamos
+      if (
+        autores.length === 1 &&
+        typeof autores[0] === "string" &&
+        autores[0].startsWith("[")
+      ) {
+        try {
+          autores = JSON.parse(autores[0]);
+        } catch {
+          autores = [];
+        }
+      }
+      return autores.map((a) => Number(a)).filter((a) => !isNaN(a));
+    })(),
+
+    video_urls: (() => {
+      let videos = rawData.video_urls || [];
+      if (
+        videos.length === 1 &&
+        typeof videos[0] === "string" &&
+        videos[0].startsWith("[")
+      ) {
+        try {
+          videos = JSON.parse(videos[0]);
+        } catch {
+          videos = [];
+        }
+      }
+      return videos.filter((v) => v && v.trim() !== "");
+    })(),
+  };
+
+  // =======================
+  // Actualización en BD
+  // =======================
   try {
-    // Actualizar datos del libro
     await sql/*sql*/ `
-  UPDATE libros
-  SET titulo = ${data.titulo},
-      descripcion = ${data.descripcion ?? null},
-      isbn = ${data.isbn ?? null},
-      anio_publicacion = ${data.anio_publicacion ?? null},
-      editorial = ${data.editorial ?? null},
-      idioma = ${data.idioma ?? null},
-      paginas = ${data.paginas ?? null},
-      palabras_clave = ${data.palabras_clave ?? null},
-      pdf_url = ${data.pdf_url},
-      examen_pdf_url = ${data.examen_pdf_url ?? null},
-      imagen = ${data.imagen ?? null},
-      video_url = ${data.video_url ?? null}, -- ✅ agregado
-      facultad_id = ${data.facultad_id},
-      carrera_id = ${data.carrera_id},
-      especialidad_id = ${data.especialidad_id}
-  WHERE id = ${data.id};
-`;
-
-    // Resetear autores del libro
-    await sql/*sql*/ `
-      DELETE FROM libros_autores
-      WHERE libro_id = ${data.id};
+      UPDATE libros
+      SET titulo = ${data.titulo},
+          descripcion = ${data.descripcion ?? null},
+          isbn = ${data.isbn ?? null},
+          anio_publicacion = ${data.anio_publicacion ?? null},
+          editorial = ${data.editorial ?? null},
+          idioma = ${data.idioma ?? null},
+          paginas = ${data.paginas ?? null},
+          palabras_clave = ${data.palabras_clave ?? []},
+          pdf_url = ${data.pdf_url},
+          examen_pdf_url = ${data.examen_pdf_url ?? null},
+          imagen = ${data.imagen ?? null},
+          video_urls = ${data.video_urls ?? []},
+          facultad_id = ${data.facultad_id},
+          carrera_id = ${data.carrera_id},
+          especialidad_id = ${data.especialidad_id}
+      WHERE id = ${data.id};
     `;
 
-    // Insertar de nuevo los autores seleccionados
+    // ✅ Limpiar autores anteriores
+    await sql/*sql*/ `
+      DELETE FROM libros_autores WHERE libro_id = ${data.id};
+    `;
+
+    // ✅ Insertar nuevos autores
     for (const autorId of data.autores) {
       await sql/*sql*/ `
         INSERT INTO libros_autores (libro_id, autor_id)
@@ -124,10 +167,32 @@ export async function updateBook(
       `;
     }
   } catch (error: any) {
-    console.error("Database Error:", error);
-    return { message: "Error en la base de datos." };
+    console.error("❌ Error al crear libro:", error.detail);
+
+    const errors: Record<string, string[]> = {};
+
+    if (error.code === "23505" && error.detail) {
+      // Regex para extraer la columna del mensaje
+      const match = error.detail.match(/\((.*?)\)=\((.*?)\)/);
+      if (match) {
+        const column = match[1]; // por ejemplo "isbn"
+        const value = match[2]; // por ejemplo "978-1234567890"
+        errors[column] = [`El valor "${value}" ya existe.`];
+      }
+    }
+
+    // Si no se reconoce el error, lo enviamos como error general
+    if (Object.keys(errors).length === 0) {
+      errors["_"] = ["Error desconocido al crear el libro."];
+    }
+
+    return {
+      message: "Corrige los errores en los campos indicados.",
+      errors,
+    };
   }
 
+  // ✅ Revalidar y redirigir
   revalidatePath("/dashboard/books");
   redirect("/dashboard/books");
 }

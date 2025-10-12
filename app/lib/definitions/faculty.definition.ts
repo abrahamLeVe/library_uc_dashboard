@@ -9,7 +9,7 @@
 export interface Facultad {
   id: number;
   nombre: string;
-  carreras?: Carrera[]; // Relación opcional
+  carreras?: Carrera[]; // Relación opcional: una facultad tiene muchas carreras
 }
 
 /**
@@ -19,20 +19,24 @@ export interface Facultad {
 export interface Carrera {
   id: number;
   nombre: string;
-  facultad_id: string;
+  facultad_id: number; // Debe ser number, no string
   facultad_nombre?: string; // Nombre de la facultad asociada (opcional)
-  especialidades?: Especialidad[]; // Relación opcional
+  especialidades?: Especialidad[]; // Relación opcional N:M con especialidades
 }
 
 /**
  * Especialidad
- * Representa una especialidad dentro de una carrera.
+ * Representa una especialidad que puede estar asociada a varias carreras.
  */
 export interface Especialidad {
   id: number;
   nombre: string;
-  carrera_id: number | null;
-  carrera_nombre: string | null;
-  facultad_id: number | null;
-  facultad_nombre: string | null;
+  carreras: {
+    id: number;
+    nombre: string;
+    facultad?: {
+      id: number;
+      nombre: string;
+    } | null;
+  }[]; // ✅ Ya no es opcional
 }

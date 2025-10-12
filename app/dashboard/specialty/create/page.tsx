@@ -1,7 +1,5 @@
-import {
-  fetchCarrerasAll,
-  fetchEspecialidadesAll,
-} from "@/app/lib/data/speciality.data";
+import { fetchCarrerasAll } from "@/app/lib/data/career.data";
+import { fetchEspecialidadesAll } from "@/app/lib/data/speciality.data";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
 import CreateEspecialidadForm from "@/app/ui/speciality/create-form";
 import LatestEspecialidades from "@/app/ui/speciality/latest-speciality";

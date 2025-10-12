@@ -2,34 +2,38 @@
 
 import { sql } from "../db";
 import { Carrera } from "../definitions/faculty.definition";
-
 const ITEMS_PER_PAGE = 10;
 
-/**
- * 📄 Obtener total de páginas de carreras (para paginación)
- */
-export async function fetchCarrerasPages(query: string) {
-  const count = await sql/*sql*/ `
-    SELECT COUNT(*)::int AS total
-    FROM carreras
-    WHERE nombre ILIKE ${"%" + query + "%"}
-  `;
+/* ============================================================
+📄 Obtener total de páginas (para paginación de carreras)
+============================================================ */
+export async function fetchCarrerasPages(query: string): Promise<number> {
+  try {
+    const result = await sql/*sql*/ `
+      SELECT COUNT(*)::int AS total
+      FROM carreras
+      WHERE nombre ILIKE ${`%${query}%`}
+    `;
 
-  const total = count[0]?.total || 0;
-  return Math.ceil(total / ITEMS_PER_PAGE);
+    const total = result[0]?.total ?? 0;
+    return Math.ceil(total / ITEMS_PER_PAGE);
+  } catch (error) {
+    console.error("❌ Error al contar carreras:", error);
+    return 0;
+  }
 }
 
-/**
- * 🔍 Obtener carreras filtradas con paginación (por nombre de carrera o facultad)
- */
+/* ============================================================
+   🔍 Obtener carreras filtradas (paginadas + facultad + especialidades)
+============================================================ */
 export async function fetchFilteredCarreras(
   query: string,
   currentPage: number
 ) {
-  const pageSize = 10;
-  const offset = (currentPage - 1) * pageSize;
+  try {
+    const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
-  const carreras = await sql/*sql*/ `
+    const carreras = await sql/*sql*/ `
     SELECT 
       c.id,
       c.nombre,
@@ -45,22 +49,26 @@ export async function fetchFilteredCarreras(
       ) AS especialidades
     FROM carreras c
     LEFT JOIN facultades f ON c.facultad_id = f.id
-    LEFT JOIN especialidades e ON e.carrera_id = c.id
+    LEFT JOIN carreras_especialidades ce ON ce.carrera_id = c.id
+    LEFT JOIN especialidades e ON e.id = ce.especialidad_id
     WHERE 
-      c.nombre ILIKE ${"%" + query + "%"} 
-      OR f.nombre ILIKE ${"%" + query + "%"}
+      c.nombre ILIKE ${`%${query}%`}
+      OR f.nombre ILIKE ${`%${query}%`}
     GROUP BY c.id, f.id, f.nombre
     ORDER BY c.nombre ASC
-    LIMIT ${pageSize} OFFSET ${offset};
+    LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
   `;
 
-  return carreras;
+    return carreras;
+  } catch (error) {
+    console.error("❌ Error al filtrar carreras:", error);
+    return [];
+  }
 }
 
-/**
- * 📚 Obtener todas las carreras (sin paginación)
- * Incluye el nombre de la facultad.
- */
+/* ============================================================
+   📚 Obtener todas las carreras (sin paginación)
+============================================================ */
 export async function fetchCarrerasAll(): Promise<Carrera[]> {
   try {
     const carreras = await sql/*sql*/ `
@@ -79,16 +87,16 @@ export async function fetchCarrerasAll(): Promise<Carrera[]> {
       nombre: c.nombre,
       facultad_id: c.facultad_id,
       facultad_nombre: c.facultad_nombre ?? null,
-    })) as Carrera[];
+    }));
   } catch (error) {
-    console.error("❌ Error al obtener carreras:", error);
+    console.error("❌ Error al obtener todas las carreras:", error);
     return [];
   }
 }
 
-/**
- * 🧾 Obtener una carrera por su ID
- */
+/* ============================================================
+   🧾 Obtener una carrera por su ID
+============================================================ */
 export async function fetchCarreraById(id: number): Promise<Carrera | null> {
   try {
     const [carrera] = await sql/*sql*/ `
@@ -104,43 +112,9 @@ export async function fetchCarreraById(id: number): Promise<Carrera | null> {
       id: carrera.id,
       nombre: carrera.nombre,
       facultad_id: carrera.facultad_id,
-    } as Carrera;
+    };
   } catch (error) {
     console.error("❌ Error al obtener carrera por ID:", error);
     return null;
-  }
-}
-
-/**
- * 🏫 Obtener todas las facultades para usar en selects
- */
-export async function fetchFacultades() {
-  try {
-    const facultades = await sql/*sql*/ `
-      SELECT id, nombre
-      FROM facultades
-      ORDER BY nombre ASC
-    `;
-    return facultades;
-  } catch (error) {
-    console.error("❌ Error fetching facultades:", error);
-    return [];
-  }
-}
-
-/**
- * 🎓 Obtener todas las especialidades (por carrera)
- */
-export async function fetchEspecialidades() {
-  try {
-    const especialidades = await sql/*sql*/ `
-      SELECT id, nombre, carrera_id
-      FROM especialidades
-      ORDER BY nombre ASC
-    `;
-    return especialidades;
-  } catch (error) {
-    console.error("❌ Error fetching especialidades:", error);
-    return [];
   }
 }

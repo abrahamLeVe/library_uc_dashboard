@@ -1,9 +1,9 @@
 "use client";
 
-import { updateBook, State } from "@/app/lib/actions/books/edit.action";
+import { State, updateBook } from "@/app/lib/actions/books/edit.action";
 import { Button } from "@/app/ui/button";
 import axios from "axios";
-import { useActionState, useState, startTransition } from "react";
+import { startTransition, useActionState, useState } from "react";
 
 export default function EditForm({
   libro,
@@ -18,20 +18,18 @@ export default function EditForm({
     initialState
   );
 
-  console.log("Libro a editar:", libro);
-
-  // Estados de selects
+  // Inicializamos a partir del libro (sin useEffect)
   const [facultadId, setFacultadId] = useState<number | null>(
-    libro.facultad_id ?? null
+    libro?.facultad_id ?? null
   );
   const [carreraId, setCarreraId] = useState<number | null>(
-    libro.carrera_id ?? null
+    libro?.carrera_id ?? null
   );
   const [especialidadId, setEspecialidadId] = useState<number | null>(
-    libro.especialidad_id ?? null
+    libro?.especialidad_id ?? null
   );
   const [autoresSeleccionados, setAutoresSeleccionados] = useState<string[]>(
-    libro.autores?.map((a: any) => String(a.id)) ?? []
+    libro?.autores?.map((a: any) => String(a.id)) ?? []
   );
 
   // Archivos
@@ -41,24 +39,56 @@ export default function EditForm({
   const [eliminarImagen, setEliminarImagen] = useState(false);
   const [eliminarExamen, setEliminarExamen] = useState(false);
 
-  // Filtrado dinámico
-  const carrerasFiltradas = carreras.filter(
-    (c: any) => c.facultad_id === facultadId
+  // Múltiples URLs de video
+  const [videoUrls, setVideoUrls] = useState<string[]>(
+    libro?.video_urls && libro.video_urls.length > 0 ? libro.video_urls : [""]
   );
-  const especialidadesFiltradas = especialidades.filter(
-    (e: any) => e.carrera_id === carreraId
-  );
+  const [uploading, setUploading] = useState(false);
+  const handleVideoUrlChange = (index: number, value: string) => {
+    const updated = [...videoUrls];
+    updated[index] = value;
+    setVideoUrls(updated);
+  };
 
+  const addVideoUrlField = () => setVideoUrls([...videoUrls, ""]);
+  const removeVideoUrlField = (index: number) => {
+    if (videoUrls.length === 1) return;
+    setVideoUrls(videoUrls.filter((_, i) => i !== index));
+  };
+
+  // Filtrados dinámicos — importantes: especialidades usan `carreras` array
+  const carrerasFiltradas = facultadId
+    ? carreras.filter((c: any) => c.facultad_id === facultadId)
+    : [];
+
+  const especialidadesFiltradas = carreraId
+    ? especialidades.filter(
+        (e: any) =>
+          Array.isArray(e.carreras) &&
+          e.carreras.some((c: any) => c.id === carreraId)
+      )
+    : [];
+
+  // Submit
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    fd.set("id", String(libro.id));
 
+    // Campos básicos
+    fd.set("id", String(libro.id));
+    fd.set("autores", JSON.stringify(autoresSeleccionados));
+    fd.set(
+      "video_urls",
+      JSON.stringify(videoUrls.filter((v) => v.trim() !== ""))
+    );
+
+    // Aseguramos setear los ids si están seleccionados (también tenemos name en los selects)
     if (facultadId) fd.set("facultad_id", String(facultadId));
     if (carreraId) fd.set("carrera_id", String(carreraId));
     if (especialidadId) fd.set("especialidad_id", String(especialidadId));
 
     try {
+      setUploading(true);
       // Imagen
       if (eliminarImagen) {
         fd.set("imagen", "");
@@ -67,26 +97,25 @@ export default function EditForm({
         uploadData.append("file", imagenFile);
         const res = await axios.post("/api/s3", uploadData);
         const key = res.data?.data?.key;
-        if (!key) throw new Error("No se pudo subir la imagen");
-        fd.set("imagen", `${key}`);
+        if (!key) throw new Error("Error subiendo imagen");
+        fd.set("imagen", key);
       } else {
         fd.set("imagen", libro.imagen ?? "");
       }
 
-      // PDF libro (👈 solo se reemplaza, no se elimina nunca)
+      // PDF libro
       if (pdfFile) {
         const uploadData = new FormData();
         uploadData.append("file", pdfFile);
         const res = await axios.post("/api/s3", uploadData);
         const key = res.data?.data?.key;
-        if (!key) throw new Error("No se pudo subir el PDF");
-        fd.set("pdf_url", `${key}`);
+        if (!key) throw new Error("Error subiendo pdf");
+        fd.set("pdf_url", key);
       } else {
-        // Si no se sube nuevo, se mantiene el actual
         fd.set("pdf_url", libro.pdf_url ?? "");
       }
 
-      // Examen
+      // Examen PDF
       if (eliminarExamen) {
         fd.set("examen_pdf_url", "");
       } else if (examenPdfFile) {
@@ -94,43 +123,53 @@ export default function EditForm({
         uploadData.append("file", examenPdfFile);
         const res = await axios.post("/api/s3", uploadData);
         const key = res.data?.data?.key;
-        if (!key) throw new Error("No se pudo subir el examen PDF");
-        fd.set("examen_pdf_url", `${key}`);
+        if (!key) throw new Error("Error subiendo examen");
+        fd.set("examen_pdf_url", key);
       } else {
         fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
       }
-
+      setUploading(false);
+      // Ejecutar action
       startTransition(() => {
         formAction(fd);
       });
     } catch (err) {
       console.error(err);
+      setUploading(false);
       alert("Error subiendo archivos");
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Errores generales */}
       {state?.message && (
-        <div className="p-2 rounded bg-red-100 text-red-600">
+        <div
+          className={`p-2 rounded text-sm ${
+            state.errors && Object.keys(state.errors).length > 0
+              ? "bg-red-100 text-red-600"
+              : "bg-green-100 text-green-600"
+          }`}
+        >
           {state.message}
         </div>
       )}
+
       <p className="text-sm text-gray-600 mb-4">
         Los campos marcados con <span className="text-red-500">*</span> son
         obligatorios.
       </p>
 
-      {/* Facultad */}
+      {/* FACULTAD */}
       <div>
         <label className="block text-sm font-medium">
           Facultad<span className="text-red-500">*</span>
         </label>
         <select
+          name="facultad_id"
           value={facultadId ?? ""}
           onChange={(e) => {
-            setFacultadId(Number(e.target.value));
+            const v = Number(e.target.value) || null;
+            setFacultadId(v);
             setCarreraId(null);
             setEspecialidadId(null);
           }}
@@ -146,21 +185,24 @@ export default function EditForm({
             </option>
           ))}
         </select>
+        <FieldError errors={state.errors?.facultad_id} />
       </div>
 
-      {/* Carrera */}
+      {/* CARRERA */}
       <div>
         <label className="block text-sm font-medium">
           Carrera<span className="text-red-500">*</span>
         </label>
         <select
+          name="carrera_id"
           value={carreraId ?? ""}
           onChange={(e) => {
-            setCarreraId(Number(e.target.value));
+            const v = Number(e.target.value) || null;
+            setCarreraId(v);
             setEspecialidadId(null);
           }}
-          className="w-full rounded-md border px-3 py-2"
           disabled={!facultadId}
+          className="w-full rounded-md border px-3 py-2"
           required
         >
           <option value="" disabled>
@@ -174,9 +216,10 @@ export default function EditForm({
             </option>
           ))}
         </select>
+        <FieldError errors={state.errors?.carrera_id} />
       </div>
 
-      {/* Especialidad */}
+      {/* ESPECIALIDAD */}
       <div>
         <label className="block text-sm font-medium">
           Especialidad<span className="text-red-500">*</span>
@@ -184,9 +227,9 @@ export default function EditForm({
         <select
           name="especialidad_id"
           value={especialidadId ?? ""}
-          onChange={(e) => setEspecialidadId(Number(e.target.value))}
-          className="w-full rounded-md border px-3 py-2"
+          onChange={(e) => setEspecialidadId(Number(e.target.value) || null)}
           disabled={!carreraId}
+          className="w-full rounded-md border px-3 py-2"
           required
         >
           <option value="" disabled>
@@ -203,7 +246,7 @@ export default function EditForm({
         <FieldError errors={state.errors?.especialidad_id} />
       </div>
 
-      {/* Autores */}
+      {/* AUTORES */}
       <div>
         <label className="block text-sm font-medium">
           Autores<span className="text-red-500">*</span>
@@ -211,17 +254,17 @@ export default function EditForm({
         <select
           name="autores"
           multiple
-          className="w-full rounded-md border px-3 py-2"
           value={autoresSeleccionados}
           onChange={(e) =>
             setAutoresSeleccionados(
               Array.from(e.target.selectedOptions, (opt) => opt.value)
             )
           }
+          className="w-full rounded-md border px-3 py-2"
           required
         >
           {autores.map((a: any) => (
-            <option key={a.id} value={a.id}>
+            <option key={a.id} value={String(a.id)}>
               {a.nombre}
             </option>
           ))}
@@ -229,9 +272,10 @@ export default function EditForm({
         <p className="mt-1 text-xs text-gray-500">
           Usa Ctrl (Windows) o Cmd (Mac) para seleccionar varios autores
         </p>
+        <FieldError errors={state.errors?.autores} />
       </div>
 
-      {/* Título */}
+      {/* TÍTULO */}
       <div>
         <label className="block text-sm font-medium">
           Título<span className="text-red-500">*</span>
@@ -243,9 +287,10 @@ export default function EditForm({
           className="w-full rounded-md border px-3 py-2"
           required
         />
+        <FieldError errors={state.errors?.titulo} />
       </div>
 
-      {/* PDF libro (👈 no se elimina, solo reemplaza) */}
+      {/* PDF libro */}
       <div>
         <label className="block text-sm font-medium">
           PDF del libro<span className="text-red-500">*</span>
@@ -256,18 +301,19 @@ export default function EditForm({
           onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
           className="w-full rounded-md border px-3 py-2"
         />
-        <FieldError errors={state.errors?.pdf_url} />
         {libro.pdf_url_signed && (
-          <div className="mt-2 space-y-1">
+          <div className="mt-2">
             <a
               href={libro.pdf_url_signed}
               target="_blank"
+              rel="noreferrer"
               className="text-blue-600 underline"
             >
               Ver PDF actual
             </a>
           </div>
         )}
+        <FieldError errors={state.errors?.pdf_url} />
       </div>
 
       {/* Descripción */}
@@ -279,9 +325,10 @@ export default function EditForm({
           className="w-full rounded-md border px-3 py-2"
           rows={3}
         />
+        <FieldError errors={state.errors?.descripcion} />
       </div>
 
-      {/* ISBN */}
+      {/* Otros campos (ISBN, año, editorial, idioma, páginas, palabras clave) */}
       <div>
         <label className="block text-sm font-medium">ISBN</label>
         <input
@@ -290,9 +337,9 @@ export default function EditForm({
           defaultValue={libro.isbn ?? ""}
           className="w-full rounded-md border px-3 py-2"
         />
+        <FieldError errors={state.errors?.isbn} />
       </div>
 
-      {/* Año publicación */}
       <div>
         <label className="block text-sm font-medium">Año de publicación</label>
         <input
@@ -301,9 +348,9 @@ export default function EditForm({
           defaultValue={libro.anio ?? ""}
           className="w-full rounded-md border px-3 py-2"
         />
+        <FieldError errors={state.errors?.anio_publicacion} />
       </div>
 
-      {/* Editorial */}
       <div>
         <label className="block text-sm font-medium">Editorial</label>
         <input
@@ -312,9 +359,9 @@ export default function EditForm({
           defaultValue={libro.editorial ?? ""}
           className="w-full rounded-md border px-3 py-2"
         />
+        <FieldError errors={state.errors?.editorial} />
       </div>
 
-      {/* Idioma */}
       <div>
         <label className="block text-sm font-medium">Idioma</label>
         <input
@@ -323,9 +370,9 @@ export default function EditForm({
           defaultValue={libro.idioma ?? ""}
           className="w-full rounded-md border px-3 py-2"
         />
+        <FieldError errors={state.errors?.idioma} />
       </div>
 
-      {/* Páginas */}
       <div>
         <label className="block text-sm font-medium">Páginas</label>
         <input
@@ -334,33 +381,51 @@ export default function EditForm({
           defaultValue={libro.paginas ?? ""}
           className="w-full rounded-md border px-3 py-2"
         />
+        <FieldError errors={state.errors?.paginas} />
       </div>
 
-      {/* Palabras clave */}
       <div>
         <label className="block text-sm font-medium">Palabras clave</label>
         <input
           type="text"
           name="palabras_clave"
-          defaultValue={libro.palabras_clave ?? ""}
+          defaultValue={(libro.palabras_clave || []).join(", ")}
           className="w-full rounded-md border px-3 py-2"
         />
+        <FieldError errors={state.errors?.palabras_clave} />
       </div>
 
-      {/* URL del video (YouTube) */}
+      {/* URLs de videos (múltiples) */}
       <div>
-        <label className="block text-sm font-medium">URL del video</label>
-        <input
-          type="url"
-          name="video_url"
-          defaultValue={libro.video_url ?? ""}
-          placeholder="https://www.youtube.com/watch?v=xxxxx"
-          className="w-full rounded-md border px-3 py-2"
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          Pega el enlace de YouTube. Ejemplo:
-          https://www.youtube.com/watch?v=abc123
-        </p>
+        <label className="block text-sm font-medium">URLs de videos</label>
+        {videoUrls.map((url, index) => (
+          <div key={index} className="flex items-center gap-2 mb-2">
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => handleVideoUrlChange(index, e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=xxxxx"
+              className="w-full rounded-md border px-3 py-2"
+            />
+            {videoUrls.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeVideoUrlField(index)}
+                className="px-2 py-1 text-red-600 border rounded hover:bg-red-50"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={addVideoUrlField}
+          className="mt-1 text-blue-600 text-sm hover:underline"
+        >
+          + Añadir otra URL
+        </button>
+        <FieldError errors={state.errors?.video_urls} />
       </div>
 
       {/* Imagen */}
@@ -388,6 +453,7 @@ export default function EditForm({
             </button>
           </div>
         )}
+        <FieldError errors={state.errors?.imagen} />
       </div>
 
       {/* PDF examen */}
@@ -404,6 +470,7 @@ export default function EditForm({
             <a
               href={libro.examen_url_signed}
               target="_blank"
+              rel="noreferrer"
               className="text-green-600 underline"
             >
               Ver examen actual
@@ -417,10 +484,27 @@ export default function EditForm({
             </button>
           </div>
         )}
+        <FieldError errors={state.errors?.examen_pdf_url} />
       </div>
+      {state?.message && (
+        <div
+          className={`p-2 rounded text-sm ${
+            state.errors && Object.keys(state.errors).length > 0
+              ? "bg-red-100 text-red-600"
+              : "bg-green-100 text-green-600"
+          }`}
+        >
+          {state.message}
+        </div>
+      )}
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? "Guardando cambios..." : "Actualizar"}
+      {/* BOTÓN */}
+      <Button type="submit" disabled={uploading || isPending}>
+        {uploading
+          ? "Subiendo archivos..."
+          : isPending
+          ? "Guardando..."
+          : "Guardar libro"}
       </Button>
     </form>
   );

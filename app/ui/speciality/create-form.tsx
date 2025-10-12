@@ -21,44 +21,21 @@ export default function CreateEspecialidadForm({
     createEspecialidad,
     initialState
   );
+  const [selectedCarreras, setSelectedCarreras] = useState<string[]>([]);
 
-  const [errorNombre, setErrorNombre] = useState("");
-
-  // ✅ Verifica si el nombre ya existe en la lista de carreras
-  const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valor = e.target.value.trim();
-    const existe = carreras.some(
-      (car) => car.nombre.toLowerCase() === valor.toLowerCase()
-    );
-
-    if (existe) {
-      setErrorNombre("⚠️ Esta especialidad ya existe.");
-    } else {
-      setErrorNombre("");
-    }
+  // ✅ Manejar selección múltiple de carreras
+  const handleCarreraSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const options = Array.from(e.target.selectedOptions, (opt) => opt.value);
+    setSelectedCarreras(options);
   };
-
-  // // ✅ Validar si el nombre ya existe (comparación insensible a mayúsculas)
-  // const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const valor = e.target.value.trim();
-  //   const existe = carreras.some(
-  //     (car) =>
-  //       car.especialidades?.some(
-  //         (esp) => esp.nombre.toLowerCase() === valor.toLowerCase()
-  //       ) ?? false
-  //   );
-
-  //   if (existe) {
-  //     setErrorNombre("⚠️ Esta especialidad ya existe en alguna carrera.");
-  //   } else {
-  //     setErrorNombre("");
-  //   }
-  // };
 
   return (
     <div className="md:col-span-4 flex justify-center">
       <form
-        action={formAction}
+        action={async (formData) => {
+          formData.set("carreras", JSON.stringify(selectedCarreras));
+          formAction(formData);
+        }}
         className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl border border-gray-200 shadow-lg shadow-gray-100"
       >
         <h2 className="text-xl font-bold text-gray-800 text-center">
@@ -77,42 +54,42 @@ export default function CreateEspecialidadForm({
             id="nombre"
             name="nombre"
             type="text"
-            onChange={handleNombreChange}
             required
             placeholder="Ej: Ingeniería de Software"
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all duration-200"
+            className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all `}
           />
-          {errorNombre && (
-            <p className="mt-1 text-sm text-red-600">{errorNombre}</p>
-          )}
+
           <FieldError errors={state.errors?.nombre} />
         </div>
 
-        {/* Select de carrera */}
+        {/* Select múltiple de carreras */}
         <div>
           <label
-            htmlFor="carrera_id"
+            htmlFor="carreras"
             className="block text-sm font-medium text-gray-700"
           >
-            Carrera Asociada <span className="text-red-500">*</span>
+            Carreras Asociadas <span className="text-red-500">*</span>
           </label>
           <select
-            id="carrera_id"
-            name="carrera_id"
+            id="carreras"
+            name="carreras"
+            multiple
             required
-            defaultValue=""
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all duration-200"
+            value={selectedCarreras}
+            onChange={handleCarreraSelect}
+            className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all duration-200 h-36"
           >
-            <option value="" disabled>
-              Selecciona una carrera
-            </option>
             {carreras.map((carrera) => (
-              <option key={carrera.id} value={carrera.id}>
-                {carrera.nombre}
+              <option key={carrera.id} value={String(carrera.id)}>
+                {carrera.nombre} ({carrera.facultad_nombre})
               </option>
             ))}
           </select>
-          <FieldError errors={state.errors?.carrera_id} />
+          <p className="text-xs text-gray-500 mt-1">
+            Mantén presionada <kbd>Ctrl</kbd> (o <kbd>Cmd</kbd> en Mac) para
+            seleccionar varias.
+          </p>
+          <FieldError errors={state.errors?.carreras} />
         </div>
 
         {/* Mensajes */}
@@ -132,7 +109,7 @@ export default function CreateEspecialidadForm({
         <div className="flex justify-end items-center gap-3">
           <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
             <Link
-              href="/dashboard/especialidad"
+              href="/dashboard/speciality"
               className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-all duration-200"
             >
               Cancelar
@@ -140,7 +117,6 @@ export default function CreateEspecialidadForm({
           </div>
           <button
             type="submit"
-            disabled={isPending || !!errorNombre}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500 focus:ring-2 focus:ring-blue-400 disabled:opacity-50 transition-all duration-200"
           >
             {isPending ? "Guardando..." : "Guardar"}

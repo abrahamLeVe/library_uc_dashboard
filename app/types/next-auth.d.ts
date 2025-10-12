@@ -2,11 +2,7 @@
 
 import "next-auth";
 import "next-auth/jwt";
-
-// =======================
-// ROLES
-// =======================
-export type Role = "ADMIN" | "ASISTENTE" | "ALUMNO";
+import { Role } from "../lib/definitions/users.definitions";
 
 // =======================
 // APP USER

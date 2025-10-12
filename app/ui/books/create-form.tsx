@@ -17,83 +17,91 @@ export default function Form({
     initialState
   );
 
+  // Estados locales
   const [facultadId, setFacultadId] = useState<number | null>(null);
   const [carreraId, setCarreraId] = useState<number | null>(null);
   const [especialidadId, setEspecialidadId] = useState<number | null>(null);
   const [autoresSeleccionados, setAutoresSeleccionados] = useState<string[]>(
     []
   );
+  const [uploading, setUploading] = useState(false);
 
+  // Archivos
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [examenPdfFile, setExamenPdfFile] = useState<File | null>(null);
+  // ===============================
+  // 🔹 Campo: URLs de Videos (múltiples)
+  // ===============================
+  const [videoUrls, setVideoUrls] = useState<string[]>([""]);
 
-  // Filtrar carreras según facultad
-  const carrerasFiltradas = carreras.filter(
-    (c: any) => c.facultad_id === facultadId
-  );
+  const handleVideoUrlChange = (index: number, value: string) => {
+    const updated = [...videoUrls];
+    updated[index] = value;
+    setVideoUrls(updated);
+  };
 
-  // Filtrar especialidades según carrera
-  const especialidadesFiltradas = especialidades.filter(
-    (e: any) => e.carrera_id === carreraId
-  );
+  const addVideoUrlField = () => {
+    setVideoUrls([...videoUrls, ""]);
+  };
 
-  const [uploading, setUploading] = useState(false);
+  const removeVideoUrlField = (index: number) => {
+    if (videoUrls.length === 1) return;
+    setVideoUrls(videoUrls.filter((_, i) => i !== index));
+  };
 
+  // 🔹 Filtrar carreras por facultad
+  const carrerasFiltradas = facultadId
+    ? carreras.filter((c: any) => c.facultad_id === facultadId)
+    : [];
+
+  // 🔹 Filtrar especialidades por carrera (ajustado a tabla intermedia)
+  const especialidadesFiltradas = carreraId
+    ? especialidades.filter((e: any) =>
+        e.carreras?.some((c: any) => c.id === carreraId)
+      )
+    : [];
+
+  // =======================================
+  // 📤 Envío del formulario
+  // =======================================
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
 
     if (facultadId) fd.set("facultad_id", String(facultadId));
     if (carreraId) fd.set("carrera_id", String(carreraId));
+    if (especialidadId) fd.set("especialidad_id", String(especialidadId));
+    autoresSeleccionados.forEach((id) => fd.append("autores", id));
 
     try {
-      setUploading(true); // 👈 empieza loading en cuanto subes archivos
+      setUploading(true);
 
-      const uploads: Promise<any>[] = [];
+      const uploads: Promise<void>[] = [];
 
-      if (pdfFile) {
+      // Subida de archivos a S3
+      const uploadFile = (file: File | null, field: string) => {
+        if (!file) return;
         const data = new FormData();
-        data.append("file", pdfFile);
+        data.append("file", file);
         uploads.push(
           axios.post("/api/s3", data).then((res) => {
             const key = res.data?.data?.key;
-            if (!key) throw new Error("No se pudo subir el PDF");
-            fd.set("pdf_url", key);
+            if (!key) throw new Error(`Error al subir ${field}`);
+            fd.set(field, key);
           })
         );
-      }
+      };
 
-      if (imagenFile) {
-        const data = new FormData();
-        data.append("file", imagenFile);
-        uploads.push(
-          axios.post("/api/s3", data).then((res) => {
-            const key = res.data?.data?.key;
-            if (!key) throw new Error("No se pudo subir la imagen");
-            fd.set("imagen", key);
-          })
-        );
-      }
-
-      if (examenPdfFile) {
-        const data = new FormData();
-        data.append("file", examenPdfFile);
-        uploads.push(
-          axios.post("/api/s3", data).then((res) => {
-            const key = res.data?.data?.key;
-            if (!key) throw new Error("No se pudo subir el examen");
-            fd.set("examen_pdf_url", key);
-          })
-        );
-      }
+      uploadFile(pdfFile, "pdf_url");
+      uploadFile(imagenFile, "imagen");
+      uploadFile(examenPdfFile, "examen_pdf_url");
 
       await Promise.all(uploads);
 
-      // ahora ya no hace falta el loading local
       setUploading(false);
 
-      // dispara el server action (aquí ya entra el isPending)
+      // Ejecuta la acción del servidor
       startTransition(() => {
         formAction(fd);
       });
@@ -106,23 +114,29 @@ export default function Form({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Mostrar mensaje general */}
+      {/* Mensaje de error o éxito */}
       {state?.message && (
-        <div className="p-2 rounded bg-red-100 text-red-600">
+        <div
+          className={`p-2 rounded text-sm ${
+            state.errors && Object.keys(state.errors).length > 0
+              ? "bg-red-100 text-red-600"
+              : "bg-green-100 text-green-600"
+          }`}
+        >
           {state.message}
         </div>
       )}
+
       <p className="text-sm text-gray-600 mb-4">
         Los campos marcados con <span className="text-red-500">*</span> son
         obligatorios.
       </p>
 
-      {/* Facultad */}
+      {/* FACULTAD */}
       <div>
         <label className="block text-sm font-medium">
           Facultad <span className="text-red-500">*</span>
         </label>
-
         <select
           value={facultadId ?? ""}
           onChange={(e) => {
@@ -144,10 +158,10 @@ export default function Form({
         </select>
       </div>
 
-      {/* Carrera */}
+      {/* CARRERA */}
       <div>
         <label className="block text-sm font-medium">
-          Carrera<span className="text-red-500">*</span>
+          Carrera <span className="text-red-500">*</span>
         </label>
         <select
           value={carreraId ?? ""}
@@ -162,7 +176,7 @@ export default function Form({
           <option value="" disabled>
             {facultadId
               ? "Seleccione una carrera"
-              : "Seleccione primero facultad"}
+              : "Seleccione primero una facultad"}
           </option>
           {carrerasFiltradas.map((c: any) => (
             <option key={c.id} value={c.id}>
@@ -172,13 +186,12 @@ export default function Form({
         </select>
       </div>
 
-      {/* Especialidad */}
+      {/* ESPECIALIDAD */}
       <div>
         <label className="block text-sm font-medium">
-          Especialidad<span className="text-red-500">*</span>
+          Especialidad <span className="text-red-500">*</span>
         </label>
         <select
-          name="especialidad_id"
           value={especialidadId ?? ""}
           onChange={(e) => setEspecialidadId(Number(e.target.value))}
           className="w-full rounded-md border px-3 py-2"
@@ -188,7 +201,7 @@ export default function Form({
           <option value="" disabled>
             {carreraId
               ? "Seleccione una especialidad"
-              : "Seleccione primero carrera"}
+              : "Seleccione primero una carrera"}
           </option>
           {especialidadesFiltradas.map((e: any) => (
             <option key={e.id} value={e.id}>
@@ -199,21 +212,20 @@ export default function Form({
         <FieldError errors={state.errors?.especialidad_id} />
       </div>
 
-      {/* Autores */}
+      {/* AUTORES */}
       <div>
         <label className="block text-sm font-medium">
-          Autores<span className="text-red-500">*</span>
+          Autores <span className="text-red-500">*</span>
         </label>
         <select
-          name="autores"
           multiple
-          className="w-full rounded-md border px-3 py-2"
           value={autoresSeleccionados}
           onChange={(e) =>
             setAutoresSeleccionados(
               Array.from(e.target.selectedOptions, (opt) => opt.value)
             )
           }
+          className="w-full rounded-md border px-3 py-2"
           required
         >
           {autores.map((a: any) => (
@@ -223,20 +235,20 @@ export default function Form({
           ))}
         </select>
         <p className="mt-1 text-xs text-gray-500">
-          Usa Ctrl (Windows) o Cmd (Mac) para seleccionar varios autores
+          Usa Ctrl (Windows) o Cmd (Mac) para seleccionar varios autores.
         </p>
         <FieldError errors={state.errors?.autores} />
       </div>
 
-      {/* Título */}
+      {/* TÍTULO */}
       <div>
         <label className="block text-sm font-medium">
-          Título<span className="text-red-500">*</span>
+          Título <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           name="titulo"
-          placeholder="Ej: Padre Rico, Padre Pobre"
+          placeholder="Ej: Desarrollo Humano"
           className="w-full rounded-md border px-3 py-2"
           required
         />
@@ -246,7 +258,7 @@ export default function Form({
       {/* PDF del libro */}
       <div>
         <label className="block text-sm font-medium">
-          PDF del libro<span className="text-red-500">*</span>
+          PDF del libro <span className="text-red-500">*</span>
         </label>
         <input
           type="file"
@@ -255,98 +267,92 @@ export default function Form({
           className="w-full rounded-md border px-3 py-2"
           required
         />
+        <FieldError errors={state.errors?.pdf_url} />
       </div>
+      {[
+        { name: "descripcion", label: "Descripción", type: "textarea" },
+        {
+          name: "isbn",
+          label: "ISBN",
+          type: "text",
+          placeholder: "978-1234567890",
+        },
+        {
+          name: "anio_publicacion",
+          label: "Año de publicación",
+          type: "number",
+        },
+        { name: "editorial", label: "Editorial", type: "text" },
+        {
+          name: "idioma",
+          label: "Idioma",
+          type: "text",
+          placeholder: "Español",
+        },
+        { name: "paginas", label: "Páginas", type: "number" },
+        {
+          name: "palabras_clave",
+          label: "Palabras clave",
+          type: "text",
+          placeholder: "separadas, por, comas",
+        },
+      ].map((field) => (
+        <div key={field.name}>
+          <label className="block text-sm font-medium">{field.label}</label>
+          {field.type === "textarea" ? (
+            <textarea
+              name={field.name}
+              rows={3}
+              className="w-full rounded-md border px-3 py-2"
+            />
+          ) : (
+            <input
+              type={field.type}
+              name={field.name}
+              placeholder={field.placeholder}
+              className="w-full rounded-md border px-3 py-2"
+            />
+          )}
+          {/* Mostrar errores específicos */}
+          <FieldError errors={state.errors?.[field.name]} />
+        </div>
+      ))}
 
-      {/* Descripción */}
+      {/* 🔹 URLs de Videos (múltiples) */}
       <div>
-        <label className="block text-sm font-medium">Descripción</label>
-        <textarea
-          name="descripcion"
-          placeholder="Breve descripción del libro"
-          className="w-full rounded-md border px-3 py-2"
-          rows={3}
-        />
+        <label className="block text-sm font-medium">URLs de videos</label>
+        {videoUrls.map((url, index) => (
+          <div key={index} className="flex items-center gap-2 mb-2">
+            <input
+              type="url"
+              name="video_urls"
+              value={url}
+              onChange={(e) => handleVideoUrlChange(index, e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=xxxxx"
+              className="w-full rounded-md border px-3 py-2"
+            />
+            {videoUrls.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeVideoUrlField(index)}
+                className="px-2 py-1 text-red-600 border rounded hover:bg-red-50"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={addVideoUrlField}
+          className="mt-1 text-blue-600 text-sm hover:underline"
+        >
+          + Añadir otra URL
+        </button>
       </div>
 
-      {/* ISBN */}
-      <div>
-        <label className="block text-sm font-medium">ISBN</label>
-        <input
-          type="text"
-          name="isbn"
-          placeholder="978-1234567890"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      {/* Año publicación */}
-      <div>
-        <label className="block text-sm font-medium">Año de publicación</label>
-        <input
-          type="number"
-          name="anio_publicacion"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      {/* Editorial */}
-      <div>
-        <label className="block text-sm font-medium">Editorial</label>
-        <input
-          type="text"
-          name="editorial"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      {/* Idioma */}
-      <div>
-        <label className="block text-sm font-medium">Idioma</label>
-        <input
-          type="text"
-          name="idioma"
-          placeholder="Ej: Español"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      {/* Páginas */}
-      <div>
-        <label className="block text-sm font-medium">Páginas</label>
-        <input
-          type="number"
-          name="paginas"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      {/* Palabras clave */}
-      <div>
-        <label className="block text-sm font-medium">Palabras clave</label>
-        <input
-          type="text"
-          name="palabras_clave"
-          placeholder="separadas, por, comas"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      {/* URL del video (YouTube) */}
-      <div>
-        <label className="block text-sm font-medium">URL del video</label>
-        <input
-          type="url"
-          name="video_url"
-          placeholder="https://www.youtube.com/watch?v=xxxxx"
-          className="w-full rounded-md border px-3 py-2"
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          Pega el enlace de YouTube. Ejemplo:
-          https://www.youtube.com/watch?v=abc123
-        </p>
-      </div>
-
-      {/* Imagen del libro */}
+      {/* Imagen y examen PDF */}
       <div>
         <label className="block text-sm font-medium">Imagen del libro</label>
         <input
@@ -357,7 +363,6 @@ export default function Form({
         />
       </div>
 
-      {/* PDF examen */}
       <div>
         <label className="block text-sm font-medium">PDF examen</label>
         <input
@@ -369,18 +374,34 @@ export default function Form({
         <FieldError errors={state.errors?.examen_pdf_url} />
       </div>
 
-      {/* Botón */}
+      {/* Mensaje de error o éxito */}
+      {state?.message && (
+        <div
+          className={`p-2 rounded text-sm ${
+            state.errors && Object.keys(state.errors).length > 0
+              ? "bg-red-100 text-red-600"
+              : "bg-green-100 text-green-600"
+          }`}
+        >
+          {state.message}
+        </div>
+      )}
+
+      {/* BOTÓN */}
       <Button type="submit" disabled={uploading || isPending}>
         {uploading
           ? "Subiendo archivos..."
           : isPending
           ? "Guardando..."
-          : "Guardar"}
+          : "Guardar libro"}
       </Button>
     </form>
   );
 }
 
+// =================================================
+// 🔸 Componente para mostrar errores
+// =================================================
 function FieldError({ errors }: { errors?: string[] }) {
   if (!errors) return null;
   return (
