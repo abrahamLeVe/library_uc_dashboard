@@ -1,6 +1,6 @@
-import { fetchLatestBooks } from "@/app/lib/data/books.data";
 import clsx from "clsx";
 import { nunito } from "../fonts";
+import { fetchLatestBooks } from "@/app/lib/data/dashboard.data";
 
 export default async function LatestBooks() {
   const latestBooks = await fetchLatestBooks();

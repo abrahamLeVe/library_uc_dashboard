@@ -1,6 +1,6 @@
 import { CalendarIcon } from "@heroicons/react/24/outline";
 import { nunito } from "../fonts";
-import { fetchLibrosPorMes } from "@/app/lib/data/books.data";
+import { fetchLibrosPorMes } from "@/app/lib/data/dashboard.data";
 
 type LibrosPorMesItem = {
   mes: number; // 1..12

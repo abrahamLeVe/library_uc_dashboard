@@ -8,7 +8,7 @@ import { useState, useTransition } from "react";
 export function CreateEspecialidad() {
   return (
     <Link
-      href="/dashboard/specialty/create"
+      href="/dashboard/speciality/create"
       className="flex h-10 items-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white hover:bg-blue-400 transition-colors"
     >
       <span className="hidden md:block">Registrar Especialidad</span>
@@ -20,7 +20,7 @@ export function CreateEspecialidad() {
 export function UpdateEspecialidad({ id }: { id: number }) {
   return (
     <Link
-      href={`/dashboard/specialty/${id}/edit`}
+      href={`/dashboard/speciality/${id}/edit`}
       className="rounded-md border p-2 hover:bg-gray-100 transition-colors"
     >
       <PencilIcon className="w-5" />

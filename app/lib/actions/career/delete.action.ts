@@ -39,8 +39,10 @@ export async function deleteCarrera(id: number) {
       DELETE FROM carreras WHERE id = ${id};
     `;
 
-    // 🔹 6. Revalidar las rutas
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
     revalidatePath("/dashboard/career");
+    revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/books");
 
     return { message: `✅ Carrera "${carrera.nombre}" eliminada con éxito.` };

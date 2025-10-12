@@ -70,7 +70,10 @@ export async function updateCarreraById(
       };
     }
 
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
     revalidatePath("/dashboard/career");
+    revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/books");
     return {
       message: `✅ Facultad "${data.nombre}" actualizada con éxito.`,

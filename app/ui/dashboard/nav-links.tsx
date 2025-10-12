@@ -26,7 +26,7 @@ const links = [
   },
   {
     name: "Especialidades",
-    href: "/dashboard/specialty",
+    href: "/dashboard/speciality",
     icon: BriefcaseIcon,
   },
   { name: "Usuarios", href: "/dashboard/users", icon: UserIcon, role: "ADMIN" },

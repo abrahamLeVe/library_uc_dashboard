@@ -51,9 +51,10 @@ export async function createFacultad(
       RETURNING id, nombre;
     `;
 
-    // Revalida rutas donde se muestran facultades
-    revalidatePath("/dashboard/faculty");
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
     revalidatePath("/dashboard/career");
+    revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/books");
 
     return {

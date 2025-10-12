@@ -19,8 +19,10 @@ export async function deleteEspecialidad(id: number) {
       DELETE FROM especialidades WHERE id = ${id};
     `;
 
-    // 🔹 3. Revalidar las rutas afectadas
-    revalidatePath("/dashboard/specialty");
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
+    revalidatePath("/dashboard/career");
+    revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/books");
 
     return {

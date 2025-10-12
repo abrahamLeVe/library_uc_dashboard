@@ -15,7 +15,7 @@ export async function authenticate(
         case "CredentialsSignin":
           return "Credenciales invalidas.";
         default:
-          return "Algo paso!.";
+          return "Algo paso! contacte con leandrovegaabraham@gmail.com";
       }
     }
     throw error;

@@ -32,7 +32,9 @@ export async function deleteFacultad(id: number) {
       DELETE FROM facultades WHERE id = ${id};
     `;
 
-    // 🔹 4. Revalidar las rutas afectadas
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
+    revalidatePath("/dashboard/career");
     revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/books");
 

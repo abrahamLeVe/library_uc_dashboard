@@ -1,4 +1,3 @@
-import { fetchCardData } from "@/app/lib/data/books.data";
 import {
   AcademicCapIcon,
   BookmarkIcon,
@@ -9,6 +8,7 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { nunito } from "../fonts";
+import { fetchCardData } from "@/app/lib/data/dashboard.data";
 
 const iconMap = {
   libros: BookOpenIcon,

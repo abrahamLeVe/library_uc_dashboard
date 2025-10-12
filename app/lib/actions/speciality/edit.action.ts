@@ -77,8 +77,11 @@ export async function updateEspecialidadById(
       `;
     }
 
-    revalidatePath("/dashboard/specialty");
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
     revalidatePath("/dashboard/career");
+    revalidatePath("/dashboard/faculty");
+    revalidatePath("/dashboard/books");
 
     return { message: `✅ Especialidad "${nombre}" actualizada con éxito.` };
   } catch (error: any) {

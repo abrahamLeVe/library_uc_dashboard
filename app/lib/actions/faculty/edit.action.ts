@@ -54,6 +54,9 @@ export async function updateFacultadById(
       return { message: "⚠️ Facultad no encontrada.", values: { id, nombre } };
     }
 
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
+    revalidatePath("/dashboard/career");
     revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/books");
 

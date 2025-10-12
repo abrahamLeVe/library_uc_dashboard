@@ -88,9 +88,10 @@ export async function createEspecialidad(
     }
 
     // 5️⃣ Revalidar páginas relacionadas
-    revalidatePath("/dashboard/especialidad");
-    revalidatePath("/dashboard/carreras");
-    revalidatePath("/dashboard/facultades");
+    revalidatePath("/dashboard/speciality");
+    revalidatePath("/dashboard/career");
+    revalidatePath("/dashboard/faculty");
+    revalidatePath("/dashboard/books");
 
     return {
       message: `✅ Especialidad "${especialidad.nombre}" creada con éxito.`,

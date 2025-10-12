@@ -56,9 +56,10 @@ export async function createCarrera(
       RETURNING id, nombre, facultad_id;
     `;
 
-    // Revalida rutas donde se muestran carreras
+    // 5️⃣ Revalidar páginas relacionadas
+    revalidatePath("/dashboard/speciality");
     revalidatePath("/dashboard/career");
-    revalidatePath("/dashboard/users");
+    revalidatePath("/dashboard/faculty");
     revalidatePath("/dashboard/books");
 
     return {
