@@ -15,8 +15,7 @@ export async function fetchAutoresPages(query: string) {
 }
 
 export async function fetchFilteredAuthors(query: string, currentPage: number) {
-  const pageSize = 10;
-  const offset = (currentPage - 1) * pageSize;
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   const autores = await sql/*sql*/ `
     SELECT 
@@ -39,7 +38,7 @@ export async function fetchFilteredAuthors(query: string, currentPage: number) {
      OR a.nacionalidad ILIKE ${"%" + query + "%"}
     GROUP BY a.id
     ORDER BY a.nombre ASC
-    LIMIT ${pageSize} OFFSET ${offset};
+    LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
   `;
 
   return autores;

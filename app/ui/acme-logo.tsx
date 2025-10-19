@@ -5,7 +5,8 @@ export default function AcmeLogo() {
     <div
       className={`${nunito.className} flex flex-col leading-none text-white`}
     >
-      <p className="text-[44px]">Library UC</p>
+      <p className="text-[44px]">Dash_</p>
+      <p className="text-[44px]">Board</p>
     </div>
   );
 }

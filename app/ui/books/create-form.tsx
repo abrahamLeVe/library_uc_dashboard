@@ -1,9 +1,10 @@
 "use client";
 
 import { createBook, State } from "@/app/lib/actions/books/create.action";
+import { uploadFileWithProgress } from "@/app/lib/utils/upload-file-progress";
 import { Button } from "@/app/ui/button";
-import axios from "axios";
-import { useActionState, useState, startTransition } from "react";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import { startTransition, useActionState, useState } from "react";
 
 export default function Form({
   facultades,
@@ -25,108 +26,90 @@ export default function Form({
     []
   );
   const [uploading, setUploading] = useState(false);
+  const [globalProgress, setGlobalProgress] = useState(0);
 
   // Archivos
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [examenPdfFile, setExamenPdfFile] = useState<File | null>(null);
-  // ===============================
-  // 🔹 Campo: URLs de Videos (múltiples)
-  // ===============================
-  const [videoUrls, setVideoUrls] = useState<string[]>([""]);
 
+  // Videos
+  const [videoUrls, setVideoUrls] = useState<string[]>([""]);
   const handleVideoUrlChange = (index: number, value: string) => {
     const updated = [...videoUrls];
     updated[index] = value;
     setVideoUrls(updated);
   };
-
-  const addVideoUrlField = () => {
-    setVideoUrls([...videoUrls, ""]);
-  };
-
+  const addVideoUrlField = () => setVideoUrls([...videoUrls, ""]);
   const removeVideoUrlField = (index: number) => {
     if (videoUrls.length === 1) return;
     setVideoUrls(videoUrls.filter((_, i) => i !== index));
   };
 
-  // 🔹 Filtrar carreras por facultad
+  // Filtrar carreras y especialidades
   const carrerasFiltradas = facultadId
     ? carreras.filter((c: any) => c.facultad_id === facultadId)
     : [];
-
-  // 🔹 Filtrar especialidades por carrera (ajustado a tabla intermedia)
   const especialidadesFiltradas = carreraId
     ? especialidades.filter((e: any) =>
         e.carreras?.some((c: any) => c.id === carreraId)
       )
     : [];
 
-  // =======================================
-  // 📤 Envío del formulario
-  // =======================================
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    setUploading(true);
+    setGlobalProgress(0);
 
-    if (facultadId) fd.set("facultad_id", String(facultadId));
-    if (carreraId) fd.set("carrera_id", String(carreraId));
-    if (especialidadId) fd.set("especialidad_id", String(especialidadId));
+    const fd = new FormData(e.currentTarget);
+    facultadId && fd.set("facultad_id", String(facultadId));
+    carreraId && fd.set("carrera_id", String(carreraId));
+    especialidadId && fd.set("especialidad_id", String(especialidadId));
     autoresSeleccionados.forEach((id) => fd.append("autores", id));
 
+    // Archivos a subir
+    const files = [
+      { file: pdfFile, field: "pdf_url" },
+      { file: imagenFile, field: "imagen" },
+      { file: examenPdfFile, field: "examen_pdf_url" },
+    ].filter((f) => f.file);
+
+    if (files.length === 0) {
+      // No hay archivos, enviamos solo el formulario
+      startTransition(() => formAction(fd));
+      setUploading(false);
+      return;
+    }
+
     try {
-      setUploading(true);
+      // Total de bytes de todos los archivos
+      const totalBytes = files.reduce((acc, f) => acc + (f.file?.size || 0), 0);
+      let uploadedBytes = 0;
 
-      const uploads: Promise<void>[] = [];
-
-      // Subida de archivos a S3
-      const uploadFile = (file: File | null, field: string) => {
-        if (!file) return;
-        const data = new FormData();
-        data.append("file", file);
-        uploads.push(
-          axios.post("/api/s3", data).then((res) => {
-            const key = res.data?.data?.key;
-            if (!key) throw new Error(`Error al subir ${field}`);
-            fd.set(field, key);
-          })
-        );
-      };
-
-      uploadFile(pdfFile, "pdf_url");
-      uploadFile(imagenFile, "imagen");
-      uploadFile(examenPdfFile, "examen_pdf_url");
+      const uploads = files.map(({ file, field }) =>
+        uploadFileWithProgress(file!, (pct) => {
+          const fileUploadedBytes = (file!.size * pct) / 100;
+          const totalProgress = uploadedBytes + fileUploadedBytes;
+          setGlobalProgress(Math.round((totalProgress / totalBytes) * 100));
+        }).then((key) => {
+          fd.set(field, key);
+          uploadedBytes += file!.size; // marcar como completado
+        })
+      );
 
       await Promise.all(uploads);
 
-      setUploading(false);
-
-      // Ejecuta la acción del servidor
-      startTransition(() => {
-        formAction(fd);
-      });
-    } catch (err) {
+      startTransition(() => formAction(fd));
+    } catch (err: any) {
       console.error(err);
+    } finally {
       setUploading(false);
-      alert("Error subiendo archivos");
+      setGlobalProgress(100);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Mensaje de error o éxito */}
-      {state?.message && (
-        <div
-          className={`p-2 rounded text-sm ${
-            state.errors && Object.keys(state.errors).length > 0
-              ? "bg-red-100 text-red-600"
-              : "bg-green-100 text-green-600"
-          }`}
-        >
-          {state.message}
-        </div>
-      )}
-
       <p className="text-sm text-gray-600 mb-4">
         Los campos marcados con <span className="text-red-500">*</span> son
         obligatorios.
@@ -156,6 +139,7 @@ export default function Form({
             </option>
           ))}
         </select>
+        <FieldError errors={state.errors?.facultad_id} />
       </div>
 
       {/* CARRERA */}
@@ -184,6 +168,7 @@ export default function Form({
             </option>
           ))}
         </select>
+        <FieldError errors={state.errors?.carrera_id} />
       </div>
 
       {/* ESPECIALIDAD */}
@@ -258,17 +243,19 @@ export default function Form({
       {/* PDF del libro */}
       <div>
         <label className="block text-sm font-medium">
-          PDF del libro <span className="text-red-500">*</span>
+          PDF del libro o archivo comprimido{" "}
+          <span className="text-red-500">*</span>
         </label>
         <input
           type="file"
-          accept="application/pdf"
+          accept=".pdf,application/pdf,.zip,application/zip,.rar,application/vnd.rar,application/x-rar-compressed"
           onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
           className="w-full rounded-md border px-3 py-2"
           required
         />
         <FieldError errors={state.errors?.pdf_url} />
       </div>
+
       {[
         { name: "descripcion", label: "Descripción", type: "textarea" },
         {
@@ -337,7 +324,7 @@ export default function Form({
                 onClick={() => removeVideoUrlField(index)}
                 className="px-2 py-1 text-red-600 border rounded hover:bg-red-50"
               >
-                ✕
+                <XMarkIcon className="w-5 h-5" />
               </button>
             )}
           </div>
@@ -350,6 +337,7 @@ export default function Form({
         >
           + Añadir otra URL
         </button>
+        <FieldError errors={state.errors?.video_urls} />
       </div>
 
       {/* Imagen y examen PDF */}
@@ -361,6 +349,7 @@ export default function Form({
           onChange={(e) => setImagenFile(e.target.files?.[0] || null)}
           className="w-full rounded-md border px-3 py-2"
         />
+        <FieldError errors={state.errors?.imagen} />
       </div>
 
       <div>
@@ -387,21 +376,32 @@ export default function Form({
         </div>
       )}
 
-      {/* BOTÓN */}
+      {/* PROGRESO GLOBAL */}
+      {uploading && (
+        <div className="w-full mb-2">
+          <div className="text-sm text-gray-700 mb-1">
+            Subiendo archivos... {globalProgress}%
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-blue-600 h-full transition-all duration-300"
+              style={{ width: `${globalProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <Button type="submit" disabled={uploading || isPending}>
         {uploading
-          ? "Subiendo archivos..."
+          ? `Subiendo archivos... ${globalProgress}%`
           : isPending
-          ? "Guardando..."
+          ? "Guardando libro..."
           : "Guardar libro"}
       </Button>
     </form>
   );
 }
 
-// =================================================
-// 🔸 Componente para mostrar errores
-// =================================================
 function FieldError({ errors }: { errors?: string[] }) {
   if (!errors) return null;
   return (

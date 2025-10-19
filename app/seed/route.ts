@@ -67,7 +67,7 @@ async function createTables() {
   await sql`
     CREATE TABLE IF NOT EXISTS libros (
       id SERIAL PRIMARY KEY,
-      titulo VARCHAR(255) NOT NULL,
+      titulo VARCHAR(255) NOT NULL UNIQUE,
       descripcion TEXT,
       isbn VARCHAR(20) UNIQUE,
       anio_publicacion INT,
@@ -83,8 +83,7 @@ async function createTables() {
       especialidad_id INT REFERENCES especialidades(id) ON DELETE CASCADE,
       video_urls TEXT[],
       created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW(),
-      UNIQUE (titulo, editorial, anio_publicacion)
+      updated_at TIMESTAMP DEFAULT NOW()
     );
   `;
 

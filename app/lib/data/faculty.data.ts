@@ -24,8 +24,7 @@ export async function fetchFilteredFacultades(
   query: string,
   currentPage: number
 ) {
-  const pageSize = 10;
-  const offset = (currentPage - 1) * pageSize;
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   const facultades = await sql/*sql*/ `
     SELECT 
@@ -44,7 +43,7 @@ export async function fetchFilteredFacultades(
     WHERE f.nombre ILIKE ${"%" + query + "%"}
     GROUP BY f.id
     ORDER BY f.nombre ASC
-    LIMIT ${pageSize} OFFSET ${offset};
+    LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
   `;
 
   return facultades;

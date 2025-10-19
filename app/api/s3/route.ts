@@ -10,17 +10,29 @@ const s3Client = new S3Client({
 });
 
 const bucketName = process.env.AWS_BUCKET_NAME!;
+const MAX_SIZE_BYTES = 100 * 1024 * 1024; // 50 MB
 
-export { bucketName, s3Client };
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/x-rar-compressed",
+  "application/octet-stream",
+  "application/x-compressed",
+  "application/gzip",
+  "application/x-gzip",
+  "application/x-tgz",
+  "application/x-tar",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
 
-// --------------------
-// SUBIDA DE ARCHIVO
-// --------------------
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-
+    console.log("Received file:", file);
     if (!(file instanceof File)) {
       return NextResponse.json(
         { success: false, message: "No file provided" },
@@ -28,27 +40,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validación de tamaño
+    if (file.size > MAX_SIZE_BYTES) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "El archivo supera el límite máximo de 50MB",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validación de tipo
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Tipo de archivo no permitido. Solo PDF, imágenes (jpg, png, webp) o archivos .zip/.rar",
+        },
+        { status: 400 }
+      );
+    }
+
     const Body = Buffer.from(await file.arrayBuffer());
 
-    // Subir archivo
-    const uploadCommand = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: file.name, // <-- esto es lo que guardas en la DB
-      Body,
-      ContentType: file.type,
-    });
-
-    await s3Client.send(uploadCommand);
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: file.name, // <-- se mantiene exacto
+        Body,
+        ContentType: file.type,
+      })
+    );
 
     return NextResponse.json({
       success: true,
-      message: "File uploaded successfully",
-      data: { key: file.name }, // <-- solo guardas el key
+      message: "Archivo subido correctamente",
+      data: { key: file.name },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      { success: false, message: "Error uploading file" },
+      { success: false, message: "Error al subir el archivo" },
       { status: 500 }
     );
   }

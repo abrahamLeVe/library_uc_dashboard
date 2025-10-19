@@ -21,7 +21,8 @@ export async function fetchEspecialidadesPages(query: string) {
          OR f.nombre ILIKE ${"%" + query + "%"};
     `;
 
-    const total = count[0]?.total ?? 0;
+    const total = count[0]?.total || 0;
+
     return Math.ceil(total / ITEMS_PER_PAGE);
   } catch (error) {
     console.error("❌ Error al contar especialidades:", error);
@@ -40,23 +41,30 @@ export async function fetchFilteredEspecialidades(
 
   try {
     const rows = await sql`
-      SELECT 
-        e.id AS especialidad_id,
-        e.nombre AS especialidad_nombre,
-        c.id AS carrera_id,
-        c.nombre AS carrera_nombre,
-        f.id AS facultad_id,
-        f.nombre AS facultad_nombre
-      FROM especialidades e
-      LEFT JOIN carreras_especialidades ce ON ce.especialidad_id = e.id
-      LEFT JOIN carreras c ON c.id = ce.carrera_id
-      LEFT JOIN facultades f ON f.id = c.facultad_id
-      WHERE e.nombre ILIKE ${"%" + query + "%"}
-         OR c.nombre ILIKE ${"%" + query + "%"}
-         OR f.nombre ILIKE ${"%" + query + "%"}
-      ORDER BY e.nombre ASC
-      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
-    `;
+  SELECT 
+    e.id AS especialidad_id,
+    e.nombre AS especialidad_nombre,
+    c.id AS carrera_id,
+    c.nombre AS carrera_nombre,
+    f.id AS facultad_id,
+    f.nombre AS facultad_nombre
+  FROM (
+    SELECT DISTINCT e.id, e.nombre
+    FROM especialidades e
+    LEFT JOIN carreras_especialidades ce ON ce.especialidad_id = e.id
+    LEFT JOIN carreras c ON c.id = ce.carrera_id
+    LEFT JOIN facultades f ON c.facultad_id = f.id
+    WHERE e.nombre ILIKE ${"%" + query + "%"}
+       OR c.nombre ILIKE ${"%" + query + "%"}
+       OR f.nombre ILIKE ${"%" + query + "%"}
+    ORDER BY e.nombre ASC
+    LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+  ) AS e
+  LEFT JOIN carreras_especialidades ce ON ce.especialidad_id = e.id
+  LEFT JOIN carreras c ON c.id = ce.carrera_id
+  LEFT JOIN facultades f ON f.id = c.facultad_id
+  ORDER BY e.nombre ASC;
+`;
 
     // 🧩 Agrupar por especialidad
     const especialidadesMap = new Map<number, any>();

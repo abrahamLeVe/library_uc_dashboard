@@ -1,6 +1,6 @@
 import { fetchFilteredBooks } from "@/app/lib/data/books.data";
 import { DeleteBook, UpdateBook } from "./buttons";
-import { getPdfUrl } from "@/app/lib/s3"; // función server-side que genera signed URL
+import { getPdfUrl } from "@/app/lib/s3";
 
 export default async function LibrosTable({
   query,
@@ -33,7 +33,7 @@ export default async function LibrosTable({
         <div className="rounded-xl bg-gray-50 p-2 shadow-sm md:pt-0">
           <table className="min-w-full text-gray-900 border-collapse">
             {/* Encabezado sticky elegante */}
-            <thead className="sticky top-0 bg-gray-100 text-left text-sm font-semibold shadow-sm z-10">
+            <thead className=" bg-gray-100 text-left text-sm font-semibold shadow-sm z-10">
               <tr>
                 <th className="px-4 py-3">Imagen</th>
                 <th className="px-4 py-3">Título</th>

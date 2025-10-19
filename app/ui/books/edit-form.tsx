@@ -1,8 +1,9 @@
 "use client";
 
 import { State, updateBook } from "@/app/lib/actions/books/edit.action";
+import { uploadFileWithProgress } from "@/app/lib/utils/upload-file-progress";
 import { Button } from "@/app/ui/button";
-import axios from "axios";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { startTransition, useActionState, useState } from "react";
 
 export default function EditForm({
@@ -18,7 +19,6 @@ export default function EditForm({
     initialState
   );
 
-  // Inicializamos a partir del libro (sin useEffect)
   const [facultadId, setFacultadId] = useState<number | null>(
     libro?.facultad_id ?? null
   );
@@ -32,31 +32,31 @@ export default function EditForm({
     libro?.autores?.map((a: any) => String(a.id)) ?? []
   );
 
-  // Archivos
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [examenPdfFile, setExamenPdfFile] = useState<File | null>(null);
+
   const [eliminarImagen, setEliminarImagen] = useState(false);
   const [eliminarExamen, setEliminarExamen] = useState(false);
 
-  // Múltiples URLs de video
   const [videoUrls, setVideoUrls] = useState<string[]>(
     libro?.video_urls && libro.video_urls.length > 0 ? libro.video_urls : [""]
   );
+
   const [uploading, setUploading] = useState(false);
+  const [globalProgress, setGlobalProgress] = useState(0);
+
   const handleVideoUrlChange = (index: number, value: string) => {
     const updated = [...videoUrls];
     updated[index] = value;
     setVideoUrls(updated);
   };
-
   const addVideoUrlField = () => setVideoUrls([...videoUrls, ""]);
   const removeVideoUrlField = (index: number) => {
     if (videoUrls.length === 1) return;
     setVideoUrls(videoUrls.filter((_, i) => i !== index));
   };
 
-  // Filtrados dinámicos — importantes: especialidades usan `carreras` array
   const carrerasFiltradas = facultadId
     ? carreras.filter((c: any) => c.facultad_id === facultadId)
     : [];
@@ -69,12 +69,10 @@ export default function EditForm({
       )
     : [];
 
-  // Submit
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
 
-    // Campos básicos
+    const fd = new FormData(e.currentTarget);
     fd.set("id", String(libro.id));
     fd.set("autores", JSON.stringify(autoresSeleccionados));
     fd.set(
@@ -82,87 +80,90 @@ export default function EditForm({
       JSON.stringify(videoUrls.filter((v) => v.trim() !== ""))
     );
 
-    // Aseguramos setear los ids si están seleccionados (también tenemos name en los selects)
     if (facultadId) fd.set("facultad_id", String(facultadId));
     if (carreraId) fd.set("carrera_id", String(carreraId));
     if (especialidadId) fd.set("especialidad_id", String(especialidadId));
 
     try {
-      setUploading(true);
-      // Imagen
-      if (eliminarImagen) {
-        fd.set("imagen", "");
-      } else if (imagenFile) {
-        const uploadData = new FormData();
-        uploadData.append("file", imagenFile);
-        const res = await axios.post("/api/s3", uploadData);
-        const key = res.data?.data?.key;
-        if (!key) throw new Error("Error subiendo imagen");
-        fd.set("imagen", key);
-      } else {
-        fd.set("imagen", libro.imagen ?? "");
+      const filesToUpload: { file: File; field: string }[] = [];
+      if (imagenFile) filesToUpload.push({ file: imagenFile, field: "imagen" });
+      if (pdfFile) filesToUpload.push({ file: pdfFile, field: "pdf_url" });
+      if (examenPdfFile)
+        filesToUpload.push({ file: examenPdfFile, field: "examen_pdf_url" });
+
+      if (filesToUpload.length === 0) {
+        if (eliminarImagen) {
+          fd.set("imagen", "");
+        } else {
+          fd.set("imagen", libro.imagen ?? "");
+        }
+
+        fd.set("pdf_url", libro.pdf_url ?? "");
+
+        if (eliminarExamen) {
+          fd.set("examen_pdf_url", "");
+        } else {
+          fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
+        }
+
+        startTransition(() => formAction(fd));
+        return;
       }
 
-      // PDF libro
-      if (pdfFile) {
-        const uploadData = new FormData();
-        uploadData.append("file", pdfFile);
-        const res = await axios.post("/api/s3", uploadData);
-        const key = res.data?.data?.key;
-        if (!key) throw new Error("Error subiendo pdf");
-        fd.set("pdf_url", key);
-      } else {
+      setUploading(true);
+      setGlobalProgress(0);
+
+      const totalBytes = filesToUpload.reduce((acc, f) => acc + f.file.size, 0);
+      let uploadedBytes = 0;
+
+      const uploads = filesToUpload.map(({ file, field }, index) =>
+        uploadFileWithProgress(file, (pct) => {
+          const fileUploadedBytes = (file.size * pct) / 100;
+          const totalProgress = uploadedBytes + fileUploadedBytes;
+          setGlobalProgress(Math.round((totalProgress / totalBytes) * 100));
+        }).then((key) => {
+          fd.set(field, key);
+          uploadedBytes += file.size;
+        })
+      );
+
+      if (!filesToUpload.some((f) => f.field === "imagen")) {
+        if (eliminarImagen) fd.set("imagen", "");
+        else fd.set("imagen", libro.imagen ?? "");
+      }
+      if (!filesToUpload.some((f) => f.field === "pdf_url")) {
         fd.set("pdf_url", libro.pdf_url ?? "");
       }
-
-      // Examen PDF
-      if (eliminarExamen) {
-        fd.set("examen_pdf_url", "");
-      } else if (examenPdfFile) {
-        const uploadData = new FormData();
-        uploadData.append("file", examenPdfFile);
-        const res = await axios.post("/api/s3", uploadData);
-        const key = res.data?.data?.key;
-        if (!key) throw new Error("Error subiendo examen");
-        fd.set("examen_pdf_url", key);
-      } else {
-        fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
+      if (!filesToUpload.some((f) => f.field === "examen_pdf_url")) {
+        if (eliminarExamen) fd.set("examen_pdf_url", "");
+        else fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
       }
+
+      await Promise.all(uploads);
+
+      setGlobalProgress(100);
+
+      startTransition(() => formAction(fd));
+    } catch (err: any) {
+      console.error("Error edit form upload:", err);
+      alert(`Error subiendo archivos: ${err?.message || err}`);
+    } finally {
       setUploading(false);
-      // Ejecutar action
-      startTransition(() => {
-        formAction(fd);
-      });
-    } catch (err) {
-      console.error(err);
-      setUploading(false);
-      alert("Error subiendo archivos");
+      setGlobalProgress((p) => (p >= 100 ? 100 : 100));
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {state?.message && (
-        <div
-          className={`p-2 rounded text-sm ${
-            state.errors && Object.keys(state.errors).length > 0
-              ? "bg-red-100 text-red-600"
-              : "bg-green-100 text-green-600"
-          }`}
-        >
-          {state.message}
-        </div>
-      )}
-
       <p className="text-sm text-gray-600 mb-4">
         Los campos marcados con <span className="text-red-500">*</span> son
         obligatorios.
       </p>
 
-      {/* FACULTAD */}
+      {/* Facultad */}
       <div>
         <label className="block text-sm font-medium">
-          Facultad<span className="text-red-500">*</span>
+          Facultad <span className="text-red-500">*</span>
         </label>
         <select
           name="facultad_id"
@@ -188,10 +189,10 @@ export default function EditForm({
         <FieldError errors={state.errors?.facultad_id} />
       </div>
 
-      {/* CARRERA */}
+      {/* Carrera */}
       <div>
         <label className="block text-sm font-medium">
-          Carrera<span className="text-red-500">*</span>
+          Carrera <span className="text-red-500">*</span>
         </label>
         <select
           name="carrera_id"
@@ -219,10 +220,10 @@ export default function EditForm({
         <FieldError errors={state.errors?.carrera_id} />
       </div>
 
-      {/* ESPECIALIDAD */}
+      {/* Especialidad */}
       <div>
         <label className="block text-sm font-medium">
-          Especialidad<span className="text-red-500">*</span>
+          Especialidad <span className="text-red-500">*</span>
         </label>
         <select
           name="especialidad_id"
@@ -246,10 +247,10 @@ export default function EditForm({
         <FieldError errors={state.errors?.especialidad_id} />
       </div>
 
-      {/* AUTORES */}
+      {/* Autores */}
       <div>
         <label className="block text-sm font-medium">
-          Autores<span className="text-red-500">*</span>
+          Autores <span className="text-red-500">*</span>
         </label>
         <select
           name="autores"
@@ -275,10 +276,10 @@ export default function EditForm({
         <FieldError errors={state.errors?.autores} />
       </div>
 
-      {/* TÍTULO */}
+      {/* Título */}
       <div>
         <label className="block text-sm font-medium">
-          Título<span className="text-red-500">*</span>
+          Título <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -290,14 +291,14 @@ export default function EditForm({
         <FieldError errors={state.errors?.titulo} />
       </div>
 
-      {/* PDF libro */}
+      {/* PDF del libro (nuevo) */}
       <div>
         <label className="block text-sm font-medium">
-          PDF del libro<span className="text-red-500">*</span>
+          PDF del libro <span className="text-red-500">*</span>
         </label>
         <input
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,.pdf"
           onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
           className="w-full rounded-md border px-3 py-2"
         />
@@ -328,7 +329,7 @@ export default function EditForm({
         <FieldError errors={state.errors?.descripcion} />
       </div>
 
-      {/* Otros campos (ISBN, año, editorial, idioma, páginas, palabras clave) */}
+      {/* Otros campos (isbn, año...) */}
       <div>
         <label className="block text-sm font-medium">ISBN</label>
         <input
@@ -345,7 +346,7 @@ export default function EditForm({
         <input
           type="number"
           name="anio_publicacion"
-          defaultValue={libro.anio ?? ""}
+          defaultValue={libro.anio_publicacion ?? ""}
           className="w-full rounded-md border px-3 py-2"
         />
         <FieldError errors={state.errors?.anio_publicacion} />
@@ -395,7 +396,7 @@ export default function EditForm({
         <FieldError errors={state.errors?.palabras_clave} />
       </div>
 
-      {/* URLs de videos (múltiples) */}
+      {/* URLs videos */}
       <div>
         <label className="block text-sm font-medium">URLs de videos</label>
         {videoUrls.map((url, index) => (
@@ -404,7 +405,7 @@ export default function EditForm({
               type="url"
               value={url}
               onChange={(e) => handleVideoUrlChange(index, e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=xxxxx"
+              placeholder="https://..."
               className="w-full rounded-md border px-3 py-2"
             />
             {videoUrls.length > 1 && (
@@ -413,7 +414,7 @@ export default function EditForm({
                 onClick={() => removeVideoUrlField(index)}
                 className="px-2 py-1 text-red-600 border rounded hover:bg-red-50"
               >
-                ✕
+                <XMarkIcon className="w-5 h-5" />
               </button>
             )}
           </div>
@@ -486,6 +487,8 @@ export default function EditForm({
         )}
         <FieldError errors={state.errors?.examen_pdf_url} />
       </div>
+
+      {/* Mensaje error/éxito */}
       {state?.message && (
         <div
           className={`p-2 rounded text-sm ${
@@ -498,10 +501,24 @@ export default function EditForm({
         </div>
       )}
 
-      {/* BOTÓN */}
+      {/* Barra de progreso global */}
+      {uploading && (
+        <div className="w-full mb-2">
+          <div className="text-sm text-gray-700 mb-1">
+            Subiendo archivos... {globalProgress}%
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-blue-600 h-full transition-all duration-300"
+              style={{ width: `${globalProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <Button type="submit" disabled={uploading || isPending}>
         {uploading
-          ? "Subiendo archivos..."
+          ? `Subiendo archivos... ${globalProgress}%`
           : isPending
           ? "Guardando..."
           : "Guardar libro"}

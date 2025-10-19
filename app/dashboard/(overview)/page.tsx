@@ -11,7 +11,7 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Dashboard UC",
+  title: "Dashboard",
 };
 
 export const dynamic = "force-dynamic";

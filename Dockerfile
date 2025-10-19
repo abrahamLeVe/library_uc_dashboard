@@ -32,5 +32,5 @@ EXPOSE 3000
 CMD ["npm", "start"]
 
 
-#docker build -t next-app-dashboard .
-#docker run -d --name dasboard-uc-app -p 3001:3000 --env-file .env next-app-dashboard
+#docker build -t next-library-dashboard .
+#docker run -d --name dasboard-uc-library -p 3001:3000 --env-file .env next-library-dashboard
