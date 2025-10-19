@@ -5,12 +5,14 @@ import { uploadFileWithProgress } from "@/app/lib/utils/upload-file-progress";
 import { Button } from "@/app/ui/button";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { startTransition, useActionState, useState } from "react";
+import KeywordSelector from "./keywords-selector";
 
 export default function Form({
   facultades,
   carreras,
   especialidades,
   autores,
+  keywords, // <--- nueva prop
 }: any) {
   const initialState: State = { message: null, errors: {} };
   const [state, formAction, isPending] = useActionState(
@@ -25,6 +27,10 @@ export default function Form({
   const [autoresSeleccionados, setAutoresSeleccionados] = useState<string[]>(
     []
   );
+  const [palabrasSeleccionadas, setPalabrasSeleccionadas] = useState<string[]>(
+    []
+  );
+
   const [uploading, setUploading] = useState(false);
   const [globalProgress, setGlobalProgress] = useState(0);
 
@@ -66,6 +72,7 @@ export default function Form({
     carreraId && fd.set("carrera_id", String(carreraId));
     especialidadId && fd.set("especialidad_id", String(especialidadId));
     autoresSeleccionados.forEach((id) => fd.append("autores", id));
+    fd.set("palabras_clave", palabrasSeleccionadas.join(","));
 
     // Archivos a subir
     const files = [
@@ -277,12 +284,6 @@ export default function Form({
           placeholder: "Español",
         },
         { name: "paginas", label: "Páginas", type: "number" },
-        {
-          name: "palabras_clave",
-          label: "Palabras clave",
-          type: "text",
-          placeholder: "separadas, por, comas",
-        },
       ].map((field) => (
         <div key={field.name}>
           <label className="block text-sm font-medium">{field.label}</label>
@@ -304,6 +305,16 @@ export default function Form({
           <FieldError errors={state.errors?.[field.name]} />
         </div>
       ))}
+
+      <div>
+        <label className="block text-sm font-medium">Palabras clave</label>
+        <KeywordSelector
+          keywords={keywords} // todas las palabras existentes
+          selectedKeywords={palabrasSeleccionadas}
+          setSelectedKeywords={setPalabrasSeleccionadas}
+        />
+        <FieldError errors={state.errors?.palabras_clave} />
+      </div>
 
       {/* 🔹 URLs de Videos (múltiples) */}
       <div>

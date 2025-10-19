@@ -5,6 +5,7 @@ import { uploadFileWithProgress } from "@/app/lib/utils/upload-file-progress";
 import { Button } from "@/app/ui/button";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { startTransition, useActionState, useState } from "react";
+import KeywordSelector from "./keywords-selector";
 
 export default function EditForm({
   libro,
@@ -12,6 +13,8 @@ export default function EditForm({
   carreras,
   especialidades,
   autores,
+  keywords, // todas las palabras clave disponibles
+  palabrasExistentes, // palabras clave precargadas del libro
 }: any) {
   const initialState: State = { message: null, errors: {} };
   const [state, formAction, isPending] = useActionState(
@@ -32,30 +35,20 @@ export default function EditForm({
     libro?.autores?.map((a: any) => String(a.id)) ?? []
   );
 
+  const [palabrasSeleccionadas, setPalabrasSeleccionadas] = useState<string[]>(
+    palabrasExistentes ?? []
+  );
+
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [examenPdfFile, setExamenPdfFile] = useState<File | null>(null);
-
   const [eliminarImagen, setEliminarImagen] = useState(false);
   const [eliminarExamen, setEliminarExamen] = useState(false);
-
   const [videoUrls, setVideoUrls] = useState<string[]>(
     libro?.video_urls && libro.video_urls.length > 0 ? libro.video_urls : [""]
   );
-
   const [uploading, setUploading] = useState(false);
   const [globalProgress, setGlobalProgress] = useState(0);
-
-  const handleVideoUrlChange = (index: number, value: string) => {
-    const updated = [...videoUrls];
-    updated[index] = value;
-    setVideoUrls(updated);
-  };
-  const addVideoUrlField = () => setVideoUrls([...videoUrls, ""]);
-  const removeVideoUrlField = (index: number) => {
-    if (videoUrls.length === 1) return;
-    setVideoUrls(videoUrls.filter((_, i) => i !== index));
-  };
 
   const carrerasFiltradas = facultadId
     ? carreras.filter((c: any) => c.facultad_id === facultadId)
@@ -69,16 +62,28 @@ export default function EditForm({
       )
     : [];
 
+  const handleVideoUrlChange = (index: number, value: string) => {
+    const updated = [...videoUrls];
+    updated[index] = value;
+    setVideoUrls(updated);
+  };
+  const addVideoUrlField = () => setVideoUrls([...videoUrls, ""]);
+  const removeVideoUrlField = (index: number) => {
+    if (videoUrls.length === 1) return;
+    setVideoUrls(videoUrls.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     const fd = new FormData(e.currentTarget);
+
     fd.set("id", String(libro.id));
     fd.set("autores", JSON.stringify(autoresSeleccionados));
     fd.set(
       "video_urls",
       JSON.stringify(videoUrls.filter((v) => v.trim() !== ""))
     );
+    fd.set("palabras_clave", JSON.stringify(palabrasSeleccionadas));
 
     if (facultadId) fd.set("facultad_id", String(facultadId));
     if (carreraId) fd.set("carrera_id", String(carreraId));
@@ -92,19 +97,11 @@ export default function EditForm({
         filesToUpload.push({ file: examenPdfFile, field: "examen_pdf_url" });
 
       if (filesToUpload.length === 0) {
-        if (eliminarImagen) {
-          fd.set("imagen", "");
-        } else {
-          fd.set("imagen", libro.imagen ?? "");
-        }
-
+        if (eliminarImagen) fd.set("imagen", "");
+        else fd.set("imagen", libro.imagen ?? "");
         fd.set("pdf_url", libro.pdf_url ?? "");
-
-        if (eliminarExamen) {
-          fd.set("examen_pdf_url", "");
-        } else {
-          fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
-        }
+        if (eliminarExamen) fd.set("examen_pdf_url", "");
+        else fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
 
         startTransition(() => formAction(fd));
         return;
@@ -116,7 +113,7 @@ export default function EditForm({
       const totalBytes = filesToUpload.reduce((acc, f) => acc + f.file.size, 0);
       let uploadedBytes = 0;
 
-      const uploads = filesToUpload.map(({ file, field }, index) =>
+      const uploads = filesToUpload.map(({ file, field }) =>
         uploadFileWithProgress(file, (pct) => {
           const fileUploadedBytes = (file.size * pct) / 100;
           const totalProgress = uploadedBytes + fileUploadedBytes;
@@ -127,22 +124,8 @@ export default function EditForm({
         })
       );
 
-      if (!filesToUpload.some((f) => f.field === "imagen")) {
-        if (eliminarImagen) fd.set("imagen", "");
-        else fd.set("imagen", libro.imagen ?? "");
-      }
-      if (!filesToUpload.some((f) => f.field === "pdf_url")) {
-        fd.set("pdf_url", libro.pdf_url ?? "");
-      }
-      if (!filesToUpload.some((f) => f.field === "examen_pdf_url")) {
-        if (eliminarExamen) fd.set("examen_pdf_url", "");
-        else fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
-      }
-
       await Promise.all(uploads);
-
       setGlobalProgress(100);
-
       startTransition(() => formAction(fd));
     } catch (err: any) {
       console.error("Error edit form upload:", err);
@@ -385,13 +368,13 @@ export default function EditForm({
         <FieldError errors={state.errors?.paginas} />
       </div>
 
+      {/* Palabras clave */}
       <div>
         <label className="block text-sm font-medium">Palabras clave</label>
-        <input
-          type="text"
-          name="palabras_clave"
-          defaultValue={(libro.palabras_clave || []).join(", ")}
-          className="w-full rounded-md border px-3 py-2"
+        <KeywordSelector
+          keywords={keywords}
+          selectedKeywords={palabrasSeleccionadas}
+          setSelectedKeywords={setPalabrasSeleccionadas}
         />
         <FieldError errors={state.errors?.palabras_clave} />
       </div>

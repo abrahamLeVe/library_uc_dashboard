@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-    console.log("Received file:", file);
     if (!(file instanceof File)) {
       return NextResponse.json(
         { success: false, message: "No file provided" },

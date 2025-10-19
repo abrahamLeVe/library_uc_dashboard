@@ -9,7 +9,6 @@ export interface Libro {
   editorial: string;
   idioma: string;
   paginas: number;
-  palabras_clave: string[];
   pdf_url: string;
   examen_pdf_url: string;
   imagen: string;
@@ -18,6 +17,7 @@ export interface Libro {
   especialidad_id: number;
   created_at: string;
   video_urls: string[];
+  palabras_clave?: string[]; // ✅ Ahora es opcional y viene de relación
 }
 
 export interface LibroAsignado {
@@ -32,5 +32,22 @@ export type LatestBook = {
   anio_publicacion: number;
   created_at: string;
   especialidad: string;
-  autores: Autor[]; // ahora es array
+  autores: Autor[];
+};
+
+// ✅ Nueva entidad
+export interface PalabraClave {
+  id: number;
+  nombre: string;
+}
+
+// ✅ Relación N:M
+export interface LibroPalabraClave {
+  libro_id: number;
+  palabra_id: number;
+}
+
+export type OnlyLibro = {
+  id: number;
+  titulo: string;
 };

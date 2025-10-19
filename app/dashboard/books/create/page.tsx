@@ -1,6 +1,7 @@
 import { fetchAutores } from "@/app/lib/data/authors.data";
 import { fetchCarrerasAll } from "@/app/lib/data/career.data";
 import { fetchFacultadesAll } from "@/app/lib/data/faculty.data";
+import { fetchKeywordsAll } from "@/app/lib/data/palabras-clave.data";
 import { fetchEspecialidadesAll } from "@/app/lib/data/speciality.data";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
 import Form from "@/app/ui/books/create-form";
@@ -11,12 +12,14 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const [autores, facultades, carreras, especialidades] = await Promise.all([
-    fetchAutores(),
-    fetchFacultadesAll(),
-    fetchCarrerasAll(),
-    fetchEspecialidadesAll(),
-  ]);
+  const [autores, facultades, carreras, especialidades, keywords] =
+    await Promise.all([
+      fetchAutores(),
+      fetchFacultadesAll(),
+      fetchCarrerasAll(),
+      fetchEspecialidadesAll(),
+      fetchKeywordsAll(),
+    ]);
 
   return (
     <main>
@@ -36,6 +39,7 @@ export default async function Page() {
         facultades={facultades}
         carreras={carreras}
         especialidades={especialidades}
+        keywords={keywords}
       />
     </main>
   );

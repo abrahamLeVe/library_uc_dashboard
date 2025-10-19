@@ -93,42 +93,71 @@ export async function createBook(prevState: State, formData: FormData) {
   } = validatedFields.data;
 
   try {
+    // 1️⃣ Insertar libro
     const result = await sql/*sql*/ `
-      INSERT INTO libros (
-        titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
-        palabras_clave, pdf_url, examen_pdf_url, imagen, video_urls,
-        facultad_id, carrera_id, especialidad_id
-      )
-      VALUES (
-        ${titulo},
-        ${descripcion ?? null},
-        ${isbn ?? null},
-        ${anio_publicacion ?? null},
-        ${editorial ?? null},
-        ${idioma ?? null},
-        ${paginas ?? null},
-        ${palabras_clave || []},
-        ${pdf_url},
-        ${examen_pdf_url ?? null},
-        ${imagen ?? null},
-        ${video_urls || []}, -- ✅ se guarda como arreglo
-        ${facultad_id},
-        ${carrera_id},
-        ${especialidad_id}
-      )
-      RETURNING id;
-    `;
+  INSERT INTO libros (
+    titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
+    pdf_url, examen_pdf_url, imagen, video_urls,
+    facultad_id, carrera_id, especialidad_id
+  )
+  VALUES (
+    ${titulo},
+    ${descripcion ?? null},
+    ${isbn ?? null},
+    ${anio_publicacion ?? null},
+    ${editorial ?? null},
+    ${idioma ?? null},
+    ${paginas ?? null},
+    ${pdf_url},
+    ${examen_pdf_url ?? null},
+    ${imagen ?? null},
+    ${video_urls || []},
+    ${facultad_id},
+    ${carrera_id},
+    ${especialidad_id}
+  )
+  RETURNING id;
+`;
 
     const libroId = result[0].id;
 
+    // 2️⃣ Relacionar autores
     for (const autorId of autores) {
       await sql/*sql*/ `
     INSERT INTO libros_autores (libro_id, autor_id)
     VALUES (${libroId}, ${autorId});
   `;
     }
+
+    if (palabras_clave && palabras_clave.length > 0) {
+      for (const palabra of palabras_clave) {
+        // ✅ Revisar si ya existe
+        const existing = await sql/*sql*/ `
+      SELECT id FROM palabras_clave WHERE nombre = ${palabra}
+    `;
+
+        let palabraId: number;
+        if (existing.length > 0) {
+          // Solo relacionar con libro
+          palabraId = existing[0].id;
+        } else {
+          // Crear nueva palabra clave
+          const inserted = await sql/*sql*/ `
+        INSERT INTO palabras_clave (nombre) VALUES (${palabra}) RETURNING id
+      `;
+          palabraId = inserted[0].id;
+        }
+
+        // Relacionar con libro, evitando duplicados
+        await sql/*sql*/ `
+      INSERT INTO libros_palabras_clave (libro_id, palabra_id)
+      VALUES (${libroId}, ${palabraId})
+      ON CONFLICT DO NOTHING
+    `;
+      }
+    }
   } catch (error: any) {
-    console.error("❌ Error al crear libro:", error.detail);
+    console.error("❌ Error al crear libro:", error);
 
     const errors: Record<string, string[]> = {};
 
@@ -154,5 +183,6 @@ export async function createBook(prevState: State, formData: FormData) {
   }
 
   revalidatePath("/dashboard/books");
+  revalidatePath("/dashboard/keywords");
   redirect("/dashboard/books");
 }

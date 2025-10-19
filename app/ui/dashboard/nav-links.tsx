@@ -6,6 +6,7 @@ import {
   BuildingLibraryIcon,
   HomeIcon,
   HomeModernIcon,
+  KeyIcon,
   UserGroupIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
@@ -29,6 +30,7 @@ const links = [
     href: "/dashboard/speciality",
     icon: BriefcaseIcon,
   },
+  { name: "Palabras Clave", href: "/dashboard/keywords", icon: KeyIcon },
   { name: "Usuarios", href: "/dashboard/users", icon: UserIcon, role: "ADMIN" },
 ];
 

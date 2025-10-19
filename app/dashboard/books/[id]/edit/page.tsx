@@ -2,6 +2,10 @@ import { fetchAutores } from "@/app/lib/data/authors.data";
 import { fetchLibroById } from "@/app/lib/data/books.data";
 import { fetchCarrerasAll } from "@/app/lib/data/career.data";
 import { fetchFacultadesAll } from "@/app/lib/data/faculty.data";
+import {
+  fetchKeywordsAll,
+  fetchLibroPalabrasClave,
+} from "@/app/lib/data/palabras-clave.data";
 import { fetchEspecialidadesAll } from "@/app/lib/data/speciality.data";
 import { getPdfUrl } from "@/app/lib/s3";
 import Breadcrumbs from "@/app/ui/books/breadcrumbs";
@@ -25,7 +29,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       fetchEspecialidadesAll(),
       fetchLibroById(id),
     ]);
-
+  const palabrasClaveExistentes = await fetchLibroPalabrasClave(id);
+  const allKeywords = await fetchKeywordsAll();
   // 2. Generamos signed URLs para vista previa si existen archivos
   const libroConUrls = {
     ...libro,
@@ -59,6 +64,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         carreras={carreras}
         especialidades={especialidades}
         libro={libroConUrls}
+        keywords={allKeywords} // todas las palabras disponibles
+        palabrasExistentes={palabrasClaveExistentes} // las palabras del libro precargadas
       />
     </main>
   );

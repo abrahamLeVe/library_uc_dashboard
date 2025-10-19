@@ -9,6 +9,8 @@ import {
   librosAsignados,
   librosAutores,
   usuarios,
+  palabrasClave,
+  librosPalabrasClave,
 } from "@/app/lib/placeholder-data";
 import bcrypt from "bcrypt";
 import { sql } from "../lib/db";
@@ -65,27 +67,43 @@ async function createTables() {
 
   // LIBROS
   await sql`
-    CREATE TABLE IF NOT EXISTS libros (
-      id SERIAL PRIMARY KEY,
-      titulo VARCHAR(255) NOT NULL UNIQUE,
-      descripcion TEXT,
-      isbn VARCHAR(20) UNIQUE,
-      anio_publicacion INT,
-      editorial VARCHAR(255),
-      idioma VARCHAR(100),
-      paginas INT,
-      palabras_clave TEXT[],
-      pdf_url TEXT,
-      examen_pdf_url TEXT,
-      imagen TEXT,
-      facultad_id INT REFERENCES facultades(id) ON DELETE CASCADE,
-      carrera_id INT REFERENCES carreras(id) ON DELETE CASCADE,
-      especialidad_id INT REFERENCES especialidades(id) ON DELETE CASCADE,
-      video_urls TEXT[],
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    );
-  `;
+  CREATE TABLE IF NOT EXISTS libros (
+    id SERIAL PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL UNIQUE,
+    descripcion TEXT,
+    isbn VARCHAR(20) UNIQUE,
+    anio_publicacion INT,
+    editorial VARCHAR(255),
+    idioma VARCHAR(100),
+    paginas INT,
+    pdf_url TEXT,
+    examen_pdf_url TEXT,
+    imagen TEXT,
+    facultad_id INT REFERENCES facultades(id) ON DELETE CASCADE,
+    carrera_id INT REFERENCES carreras(id) ON DELETE CASCADE,
+    especialidad_id INT REFERENCES especialidades(id) ON DELETE CASCADE,
+    video_urls TEXT[],
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
+`;
+
+  // TABLA PALABRAS CLAVE
+  await sql`
+  CREATE TABLE IF NOT EXISTS palabras_clave (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE
+  );
+`;
+
+  // TABLA PIVOTE LIBROS ↔ PALABRAS CLAVE
+  await sql`
+  CREATE TABLE IF NOT EXISTS libros_palabras_clave (
+    libro_id INT REFERENCES libros(id) ON DELETE CASCADE,
+    palabra_id INT REFERENCES palabras_clave(id) ON DELETE CASCADE,
+    PRIMARY KEY (libro_id, palabra_id)
+  );
+`;
 
   // LIBROS_AUTORES
   await sql`
@@ -126,7 +144,21 @@ async function createTables() {
    LIMPIAR TABLAS
 =========================== */
 async function clearTables() {
-  await sql`TRUNCATE TABLE libros_asignados, libros_autores, usuarios, libros, autores, carreras_especialidades, especialidades, carreras, facultades RESTART IDENTITY CASCADE`;
+  await sql`
+    TRUNCATE TABLE
+      libros_asignados,
+      libros_palabras_clave,
+      libros_autores,
+      usuarios,
+      libros,
+      palabras_clave,
+      autores,
+      carreras_especialidades,
+      especialidades,
+      carreras,
+      facultades
+    RESTART IDENTITY CASCADE
+  `;
 }
 
 /* ===========================
@@ -187,21 +219,39 @@ async function seedLibros() {
     await sql`
       INSERT INTO libros (
         id, titulo, descripcion, isbn, anio_publicacion, editorial, idioma, paginas,
-        palabras_clave, pdf_url, examen_pdf_url, imagen,
+        pdf_url, examen_pdf_url, imagen,
         facultad_id, carrera_id, especialidad_id, video_urls, created_at
       )
       VALUES (
         ${l.id}, ${l.titulo}, ${l.descripcion}, ${l.isbn}, ${
       l.anio_publicacion
     },
-        ${l.editorial}, ${l.idioma}, ${l.paginas}, ${sql.array(
-      l.palabras_clave
-    )},
+        ${l.editorial}, ${l.idioma}, ${l.paginas},
         ${l.pdf_url}, ${l.examen_pdf_url}, ${l.imagen},
         ${l.facultad_id}, ${l.carrera_id}, ${l.especialidad_id},
         ${sql.array(l.video_urls)}, ${l.created_at}
       )
       ON CONFLICT (id) DO NOTHING;
+    `;
+  }
+}
+
+async function seedPalabrasClave() {
+  for (const p of palabrasClave) {
+    await sql`
+      INSERT INTO palabras_clave (id, nombre)
+      VALUES (${p.id}, ${p.nombre})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
+}
+
+async function seedLibrosPalabrasClave() {
+  for (const lp of librosPalabrasClave) {
+    await sql`
+      INSERT INTO libros_palabras_clave (libro_id, palabra_id)
+      VALUES (${lp.libro_id}, ${lp.palabra_id})
+      ON CONFLICT (libro_id, palabra_id) DO NOTHING;
     `;
   }
 }
@@ -256,6 +306,8 @@ export async function GET() {
       await seedCarrerasEspecialidades();
       await seedAutores();
       await seedLibros();
+      await seedPalabrasClave();
+      await seedLibrosPalabrasClave(); // 👈 AÑADIR AQUÍ
       await seedLibrosAutores();
       await seedUsuarios();
       await seedLibrosAsignados();

@@ -13,7 +13,7 @@ export default function NotFound() {
         base de datos.
       </p>
       <Link
-        href="/dashboard/themes"
+        href="/dashboard/faculty"
         className="mt-4 rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-md transition-colors hover:bg-blue-500"
       >
         Volver al inicio

@@ -60,11 +60,6 @@ export const libros = [
     editorial: "Plata Publishing",
     idioma: "Español",
     paginas: 336,
-    palabras_clave: [
-      "finanzas personales",
-      "inversión",
-      "educación financiera",
-    ],
     pdf_url: "/pdfs/padre-rico.pdf",
     examen_pdf_url: "/pdfs/examen-padre-rico.pdf",
     imagen: "",
@@ -72,7 +67,6 @@ export const libros = [
     carrera_id: 1101,
     especialidad_id: 1602,
     created_at: "2025-01-15T10:00:00Z",
-
     video_urls: [
       "https://www.youtube.com/watch?v=3bK8e9qD_0E",
       "https://www.youtube.com/watch?v=Vx2LtpJXEhY",
@@ -88,7 +82,6 @@ export const libros = [
     editorial: "Pearson",
     idioma: "Español",
     paginas: 720,
-    palabras_clave: ["estructuras", "ingeniería civil", "cálculo"],
     pdf_url: "/pdfs/analisis-estructural.pdf",
     examen_pdf_url: "/pdfs/examen-analisis-estructural.pdf",
     imagen: "",
@@ -96,7 +89,6 @@ export const libros = [
     carrera_id: 1201,
     especialidad_id: 1601,
     created_at: "2025-09-05T12:30:00Z",
-
     video_urls: [
       "https://www.youtube.com/watch?v=t6hL_5fDGrs",
       "https://www.youtube.com/watch?v=yoz2jxqg5dc",
@@ -112,7 +104,6 @@ export const libros = [
     editorial: "Penguin Clásicos",
     idioma: "Español",
     paginas: 672,
-    palabras_clave: ["psicoanálisis", "sueños", "subconsciente"],
     pdf_url: "/pdfs/interpretacion-suenos.pdf",
     examen_pdf_url: "/pdfs/examen-suenos.pdf",
     imagen: "",
@@ -120,9 +111,71 @@ export const libros = [
     carrera_id: 1301,
     especialidad_id: 1604,
     created_at: "2025-09-10T09:15:00Z",
-
     video_urls: [""],
   },
+  {
+    id: 1404,
+    titulo: "El Poder del Hábito",
+    descripcion:
+      "Explora cómo los hábitos influyen en nuestras vidas y cómo cambiarlos.",
+    isbn: "978-0307741996",
+    anio_publicacion: 2014,
+    editorial: "Random House",
+    idioma: "Español",
+    paginas: 400,
+    pdf_url: "/pdfs/poder-habito.pdf",
+    examen_pdf_url: "/pdfs/examen-habito.pdf",
+    imagen: "",
+    facultad_id: 1003,
+    carrera_id: 1301,
+    especialidad_id: 1605,
+    created_at: "2025-09-20T11:00:00Z",
+    video_urls: ["https://www.youtube.com/watch?v=OMbsGBlpP30"],
+  },
+];
+
+// =======================
+// PALABRAS CLAVE
+// =======================
+export const palabrasClave = [
+  { id: 1701, nombre: "finanzas personales" },
+  { id: 1702, nombre: "inversión" },
+  { id: 1703, nombre: "educación financiera" },
+  { id: 1704, nombre: "estructuras" },
+  { id: 1705, nombre: "ingeniería civil" },
+  { id: 1706, nombre: "cálculo" },
+  { id: 1707, nombre: "psicoanálisis" },
+  { id: 1708, nombre: "sueños" },
+  { id: 1709, nombre: "subconsciente" },
+  { id: 1710, nombre: "motivación" }, // 👈 Nueva palabra clave usada en varios libros
+];
+
+// ===============================
+// LIBROS ↔ PALABRAS CLAVE (N:M)
+// ===============================
+export const librosPalabrasClave = [
+  // Padre Rico, Padre Pobre
+  { libro_id: 1401, palabra_id: 1701 },
+  { libro_id: 1401, palabra_id: 1702 },
+  { libro_id: 1401, palabra_id: 1703 },
+  { libro_id: 1401, palabra_id: 1710 }, // también está relacionado con motivación
+
+  // Análisis Estructural
+  { libro_id: 1402, palabra_id: 1704 },
+  { libro_id: 1402, palabra_id: 1705 },
+  { libro_id: 1402, palabra_id: 1706 },
+
+  // Interpretación de los Sueños
+  { libro_id: 1403, palabra_id: 1707 },
+  { libro_id: 1403, palabra_id: 1708 },
+  { libro_id: 1403, palabra_id: 1709 },
+
+  // El Poder del Hábito
+  { libro_id: 1404, palabra_id: 1710 }, // también usa motivación
+  { libro_id: 1404, palabra_id: 1703 }, // también relacionado con educación financiera
+
+  // Extra: Otro libro con motivación
+  { libro_id: 1402, palabra_id: 1710 }, // motivación en otro libro también
 ];
 
 // =======================

@@ -21,6 +21,7 @@ export async function deleteBook(id: string) {
       DELETE FROM libros
       WHERE id = ${id};
     `;
+    revalidatePath("/dashboard/keywords");
     revalidatePath("/dashboard/books");
   } catch (error: any) {
     console.error("Database Error (deleteBook):", error);
