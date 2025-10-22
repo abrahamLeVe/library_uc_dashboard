@@ -8,6 +8,7 @@ import {
   libros,
   librosAsignados,
   librosAutores,
+  librosEspecialidades,
   usuarios,
   palabrasClave,
   librosPalabrasClave,
@@ -85,6 +86,15 @@ async function createTables() {
     video_urls TEXT[],
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
+  );
+`;
+
+  // LIBROS ↔ ESPECIALIDADES (N:M)
+  await sql`
+  CREATE TABLE IF NOT EXISTS libros_especialidades (
+    libro_id INT REFERENCES libros(id) ON DELETE CASCADE,
+    especialidad_id INT REFERENCES especialidades(id) ON DELETE CASCADE,
+    PRIMARY KEY (libro_id, especialidad_id)
   );
 `;
 
@@ -266,6 +276,16 @@ async function seedLibrosAutores() {
   }
 }
 
+async function seedLibrosEspecialidades() {
+  for (const le of librosEspecialidades) {
+    await sql`
+      INSERT INTO libros_especialidades (libro_id, especialidad_id)
+      VALUES (${le.libro_id}, ${le.especialidad_id})
+      ON CONFLICT (libro_id, especialidad_id) DO NOTHING;
+    `;
+  }
+}
+
 async function seedUsuarios() {
   for (const u of usuarios) {
     const hashedPassword = await bcrypt.hash(u.password, 10);
@@ -306,6 +326,7 @@ export async function GET() {
       await seedCarrerasEspecialidades();
       await seedAutores();
       await seedLibros();
+      await seedLibrosEspecialidades();
       await seedPalabrasClave();
       await seedLibrosPalabrasClave(); // 👈 AÑADIR AQUÍ
       await seedLibrosAutores();
