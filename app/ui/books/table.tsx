@@ -1,6 +1,6 @@
 import { fetchFilteredBooks } from "@/app/lib/data/books.data";
-import { DeleteBook, UpdateBook } from "./buttons";
 import { getPdfUrl } from "@/app/lib/s3";
+import { DeleteBook, UpdateBook } from "./buttons";
 
 export default async function LibrosTable({
   query,
@@ -10,11 +10,10 @@ export default async function LibrosTable({
   currentPage: number;
 }) {
   const libros = await fetchFilteredBooks(query, currentPage);
-  // Generar URLs firmadas para cada libro
   const librosConUrls = await Promise.all(
     libros.map(async (libro: any) => {
       const pdf_url_signed = libro.pdf_url
-        ? await getPdfUrl(libro.pdf_url, 604800) // 7 días
+        ? await getPdfUrl(libro.pdf_url, 604800)
         : null;
       const examen_url_signed = libro.examen_pdf_url
         ? await getPdfUrl(libro.examen_pdf_url, 604800)
@@ -32,8 +31,7 @@ export default async function LibrosTable({
       <div className="inline-block min-w-full align-middle">
         <div className="rounded-xl bg-gray-50 p-2 shadow-sm md:pt-0">
           <table className="min-w-full text-gray-900 border-collapse">
-            {/* Encabezado sticky elegante */}
-            <thead className=" bg-gray-100 text-left text-sm font-semibold shadow-sm z-10">
+            <thead className="bg-gray-100 text-left text-sm font-semibold shadow-sm z-10">
               <tr>
                 <th className="px-4 py-3">Imagen</th>
                 <th className="px-4 py-3">Título</th>
@@ -50,7 +48,7 @@ export default async function LibrosTable({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 bg-white text-xs">
               {librosConUrls.map((libro: any) => (
                 <tr
                   key={libro.id}

@@ -32,6 +32,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const palabrasClaveExistentes = await fetchLibroPalabrasClave(id);
   const allKeywords = await fetchKeywordsAll();
   // 2. Generamos signed URLs para vista previa si existen archivos
+
   const libroConUrls = {
     ...libro,
     pdf_url_signed: libro.pdf_url

@@ -13,13 +13,48 @@ export const facultades = [
 // CARRERAS
 // =======================
 export const carreras = [
+  // Facultad de Ciencias de la Empresa
   { id: 1101, nombre: "Administración y Finanzas", facultad_id: 1001 },
   { id: 1102, nombre: "Administración y Marketing", facultad_id: 1001 },
+  { id: 1103, nombre: "Contabilidad", facultad_id: 1001 },
+  { id: 1104, nombre: "Negocios Internacionales", facultad_id: 1001 },
+
+  // Facultad de Ingeniería
   { id: 1201, nombre: "Ingeniería Civil", facultad_id: 1002 },
   { id: 1202, nombre: "Ingeniería Industrial", facultad_id: 1002 },
   { id: 1203, nombre: "Ciencia de la Computación", facultad_id: 1002 },
+  { id: 1204, nombre: "Ingeniería Ambiental", facultad_id: 1002 },
+  {
+    id: 1205,
+    nombre: "Ingeniería de Sistemas e Informática",
+    facultad_id: 1002,
+  },
+  { id: 1206, nombre: "Ingeniería Mecánica", facultad_id: 1002 },
+  { id: 1207, nombre: "Ingeniería Electrónica", facultad_id: 1002 },
+
+  // Facultad de Humanidades
   { id: 1301, nombre: "Psicología", facultad_id: 1003 },
+  {
+    id: 1302,
+    nombre: "Educación Inicial e Interculturalidad",
+    facultad_id: 1003,
+  },
+  {
+    id: 1303,
+    nombre: "Educación Primaria e Interculturalidad",
+    facultad_id: 1003,
+  },
+
+  // Facultad de Derecho
   { id: 1401, nombre: "Derecho", facultad_id: 1004 },
+
+  // Facultad de Salud
+  { id: 1501, nombre: "Enfermería", facultad_id: 1005 },
+  { id: 1502, nombre: "Medicina Humana", facultad_id: 1005 },
+  { id: 1503, nombre: "Odontología", facultad_id: 1005 },
+  { id: 1504, nombre: "Nutrición y Dietética", facultad_id: 1005 },
+  { id: 1505, nombre: "Terapia Física y Rehabilitación", facultad_id: 1005 },
+  { id: 1506, nombre: "Tecnología Médica", facultad_id: 1005 },
 ];
 
 // =======================
@@ -31,19 +66,60 @@ export const especialidades = [
   { id: 1603, nombre: "Marketing Digital" },
   { id: 1604, nombre: "Psicología Clínica" },
   { id: 1605, nombre: "Derecho Penal" },
+  { id: 1606, nombre: "Gestión Empresarial" },
+  { id: 1607, nombre: "Negocios Internacionales" },
+  { id: 1608, nombre: "Comercio Exterior" },
+  { id: 1609, nombre: "Inteligencia Artificial" },
+  { id: 1610, nombre: "Ingeniería de Software" },
+  { id: 1611, nombre: "Ciencia de Datos" },
+  { id: 1612, nombre: "Gestión Ambiental" },
+  { id: 1613, nombre: "Estructuras" },
+  { id: 1614, nombre: "Geotecnia" },
+  { id: 1615, nombre: "Recursos Humanos" },
+  { id: 1616, nombre: "Psicología Organizacional" },
+  { id: 1617, nombre: "Educación Intercultural" },
+  { id: 1618, nombre: "Odontología Restauradora" },
+  { id: 1619, nombre: "Fisioterapia Deportiva" },
 ];
 
 // =======================
-// RELACIÓN MUCHOS A MUCHOS (Carreras ↔ Especialidades)
+// RELACIÓN MUCHOS A MUCHOS
 // =======================
 export const carrerasEspecialidades = [
+  // Ingeniería
   { carrera_id: 1201, especialidad_id: 1601 }, // Cálculo en Ing. Civil
-  { carrera_id: 1202, especialidad_id: 1601 }, // Cálculo en Ing. Industrial
-  { carrera_id: 1203, especialidad_id: 1601 }, // Cálculo en Computación
+  { carrera_id: 1201, especialidad_id: 1613 }, // Estructuras
+  { carrera_id: 1201, especialidad_id: 1614 }, // Geotecnia
+  { carrera_id: 1202, especialidad_id: 1601 },
+  { carrera_id: 1202, especialidad_id: 1612 },
+  { carrera_id: 1203, especialidad_id: 1609 },
+  { carrera_id: 1203, especialidad_id: 1610 },
+  { carrera_id: 1203, especialidad_id: 1611 },
+  { carrera_id: 1204, especialidad_id: 1612 },
+  { carrera_id: 1205, especialidad_id: 1610 },
+  { carrera_id: 1206, especialidad_id: 1601 },
+  { carrera_id: 1207, especialidad_id: 1601 },
+
+  // Empresa
   { carrera_id: 1101, especialidad_id: 1602 },
+  { carrera_id: 1101, especialidad_id: 1606 },
   { carrera_id: 1102, especialidad_id: 1603 },
+  { carrera_id: 1102, especialidad_id: 1615 },
+  { carrera_id: 1103, especialidad_id: 1602 },
+  { carrera_id: 1104, especialidad_id: 1607 },
+  { carrera_id: 1104, especialidad_id: 1608 },
+
+  // Humanidades
   { carrera_id: 1301, especialidad_id: 1604 },
+  { carrera_id: 1301, especialidad_id: 1616 },
+  { carrera_id: 1302, especialidad_id: 1617 },
+
+  // Derecho
   { carrera_id: 1401, especialidad_id: 1605 },
+
+  // Salud
+  { carrera_id: 1501, especialidad_id: 1619 },
+  { carrera_id: 1503, especialidad_id: 1618 },
 ];
 // ===============================
 // LIBROS ↔ ESPECIALIDADES (N:M)

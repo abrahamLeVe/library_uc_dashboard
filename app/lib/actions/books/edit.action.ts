@@ -21,7 +21,7 @@ const EditSchema = z.object({
   titulo: z
     .string()
     .min(3, { message: "El título debe tener al menos 3 caracteres." }),
-  pdf_url: z.string().min(3, { message: "Inserte la URL del PDF" }),
+  pdf_url: z.string().min(3, { message: "Inserte el PDF" }),
   descripcion: z.string().optional(),
   isbn: z.string().optional(),
   anio_publicacion: z.coerce.number().optional(),

@@ -13,8 +13,8 @@ export default function EditForm({
   carreras,
   especialidades,
   autores,
-  keywords, // todas las palabras clave disponibles
-  palabrasExistentes, // palabras clave precargadas del libro
+  keywords,
+  palabrasExistentes,
 }: any) {
   const initialState: State = { message: null, errors: {} };
   const [state, formAction, isPending] = useActionState(
@@ -89,20 +89,34 @@ export default function EditForm({
     if (carreraId) fd.set("carrera_id", String(carreraId));
     if (especialidadId) fd.set("especialidad_id", String(especialidadId));
 
+    const filesToUpload: { file: File; field: string }[] = [];
+    if (imagenFile) filesToUpload.push({ file: imagenFile, field: "imagen" });
+    if (pdfFile) filesToUpload.push({ file: pdfFile, field: "pdf_url" });
+    if (examenPdfFile)
+      filesToUpload.push({ file: examenPdfFile, field: "examen_pdf_url" });
+
+    if (!imagenFile) {
+      if (eliminarImagen) {
+        fd.set("imagen", "");
+      } else {
+        fd.set("imagen", libro.imagen ?? "");
+      }
+    }
+
+    if (!pdfFile) {
+      fd.set("pdf_url", libro.pdf_url ?? "");
+    }
+
+    if (!examenPdfFile) {
+      if (eliminarExamen) {
+        fd.set("examen_pdf_url", "");
+      } else {
+        fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
+      }
+    }
+
     try {
-      const filesToUpload: { file: File; field: string }[] = [];
-      if (imagenFile) filesToUpload.push({ file: imagenFile, field: "imagen" });
-      if (pdfFile) filesToUpload.push({ file: pdfFile, field: "pdf_url" });
-      if (examenPdfFile)
-        filesToUpload.push({ file: examenPdfFile, field: "examen_pdf_url" });
-
       if (filesToUpload.length === 0) {
-        if (eliminarImagen) fd.set("imagen", "");
-        else fd.set("imagen", libro.imagen ?? "");
-        fd.set("pdf_url", libro.pdf_url ?? "");
-        if (eliminarExamen) fd.set("examen_pdf_url", "");
-        else fd.set("examen_pdf_url", libro.examen_pdf_url ?? "");
-
         startTransition(() => formAction(fd));
         return;
       }
@@ -329,7 +343,7 @@ export default function EditForm({
         <input
           type="number"
           name="anio_publicacion"
-          defaultValue={libro.anio_publicacion ?? ""}
+          defaultValue={libro.anio ?? ""}
           className="w-full rounded-md border px-3 py-2"
         />
         <FieldError errors={state.errors?.anio_publicacion} />
